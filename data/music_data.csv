@@ -1,4 +1,4 @@
-song_id, name, pop, rock, hip-hop, blues, k-pop, trap, relax, party, study, ost, rock&roll
+song_id,name,pop,rock,hip-hop,blues,k-pop,trap,relax,party,study,ost,rock&roll
 398743,Toxic,1,0,0,0,0,0,0,1,0,0,0
 493475,Rosa Parks,0,0,1,0,0,0,0,1,0,1,0
 384325,Feeling Good,0,0,0,1,0,0,1,1,1,1,0
