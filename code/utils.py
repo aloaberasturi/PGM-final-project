@@ -1,7 +1,7 @@
 import pandas as pd
 
 def get_data():
-    music_data = pd.read_csv('dataset/music_data.csv.zip')
+    music_data = pd.read_csv('data/music_data.csv.zip')
     music_data['original_title'] = music_data['original_title'].str.lower()
     music_data= music_data.drop(columns=['song_id', 'blabla','year'])
     return music_data
