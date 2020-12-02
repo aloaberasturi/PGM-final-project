@@ -12,28 +12,24 @@ if __name__ == '__main__':
     [music_data, user_data, rating_data] = utils.get_data()
     [songs_dict, users_dict, features_dict] = utils.get_dicts(music_data, user_data, rating_data)
 
-    # B) create matrix s and matrix D    
+    # B) create matrix S and matrix D    
 
     matrix_D = music_data.drop('name', axis=1).rename(columns={v:k for (k,v) in features_dict.items()})
-    # matrix_S = INSERTAR AQUÍ EL CÓDIGO PARA CAMABIAR EL DATAFRAME
-
-    # C) compute weights
-
-    [w_fi, w_iu, w_ua] = utils.compute_weights(matrix_D, matrix_S)    
-
-    # D) choose active user and target song
+    #matrix_S
     
-    active_user, target_song = utils.input_query(user, song, matrix_S)
+    # C) choose active user and target song
 
-    # E) create topology
+    [active_user, target_song] = utils.select_user_and_song(matrix_S)  
+
+    # D) create topology
 
     graph = create_topology(matrix_S, matrix_D, active_user, target_song)
 
-    # F) compute ratings
+    # E) compute ratings
     
-    rating = perform_inference(graph)
+    rating = perform_inference(matrix_S, matrix_D, graph)
 
-    # G) classify rating
+    # F) classify rating
 
     user_opinion = utils.check_rating(rating)
 

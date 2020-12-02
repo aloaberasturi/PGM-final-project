@@ -1,10 +1,12 @@
 #!/usr/bin/python3
 import pandas as pd
+import random
 from pathlib import Path
 
 def get_data():
 
     data_folder = Path('../' + "data")
+
     music_data = data_folder / "music_data.csv"
     music_data = pd.read_csv(music_data)
     music_data.dropna(inplace = True) 
@@ -21,7 +23,7 @@ def get_data():
 
 def get_dicts(music_data, user_data, rating_data):
 
-    songs_dict = pd.Series(music_data.song_id.values, index = music_data.name).to_dict()
+    songs_dict = pd.Series(music_data.song_id.values, index = music_data.name).to_dict() #maybe here?
     users_dict = pd.Series(user_data.user_id.values, index = user_data.name).to_dict()
     features = list(music_data.keys()[2:])
     keys = ["f_%i" % i for i in range(len(features))]
@@ -33,21 +35,25 @@ def get_dicts(music_data, user_data, rating_data):
 def compute_similarity(u1,u2):
     pass
 
-def compute_weights(x,y):
-    pass
-    # check class of x and y 
-    # compute w(f,i), w(i,u) or w(u,a)
+def compute_weights(matrix_D, matrix_S, active_user):
+    # parameters m and n_k used in w(f,i)
+    m = len(matrix_D['song_id'])
+    frequencies = {'n_{}'.format(i): sum(matrix_D['f_%s' % i]) for i in range(len(matrix_D.keys()[1:]))}
 
-def compute_description_matrix(music_data):
-    pass
+    # parameter iucb == |I(Ucb)| used in w(i,u)    
+    row = matrix_S[matrix_S['user_id'] == active_user]
+    iucb = row.drop(['user_id'], axis=1).values.sum(axis=1)
 
-def compute_score_matrix(user_data, rating_data):
-    pass
+def select_user_and_song(matrix_S):
+    user = random.choice(matrix_S(['user']))
 
-def input_query(user,song, matrix_S):
-    pass
-    # user has already rated song according to matrix_S, return error
-    # select active user and target item 
+    while True:
+        song = random.choice(matrix_S.keys()[1:])# If the active user has already rated the song try again            
+        rating = matrix_S.at(user, song)
+        if (rating ==0):
+            break
+    return (user, song)
+
 
 def check_rating(rating):
     if (rating < 3):

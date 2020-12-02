@@ -1,6 +1,6 @@
 from utils import compute_weights
 
-def perform_inference(topology):
+def perform_inference(graph, matrix_D, matrix_S):
 
     #  Content-based propagation:
 
