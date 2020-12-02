@@ -15,7 +15,15 @@ if __name__ == '__main__':
     # B) create matrix S and matrix D    
 
     matrix_D = music_data.drop('name', axis=1).rename(columns={v:k for (k,v) in features_dict.items()})
-    #matrix_S
+    
+    import numpy as np
+    song_ids = [song_id for song_id in songs_dict.values()]  # maybe there is a more efficient way to get these instead of
+    user_ids = [user_id for user_id in users_dict.values()]  # taking them out of the dictionary?
+    matrix_S = pd.DataFrame(np.zeros((len(user_ids), len(song_ids))),index=user_ids, columns=song_ids)  # create zero matrix (set r = 0 for all values)
+    #print(matrix_S)   # showing 0 matrix
+    for ind,row in rating_data.iterrows():       # for each index, row in the rating data
+        matrix_S[row['song_id']][row['user_id']] = row['rating'] # set each value in matrix_S to corresponding rating if exists, otherwise stays 0
+    #print(matrix_S)  # matrix was updated
     
     # C) choose active user and target song
 
