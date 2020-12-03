@@ -1,11 +1,10 @@
 #!/usr/bin/python3
 
-from topology import create_topology
+from topology import build_topology
 from pathlib import Path
 # from inference import perform_inference
 import utils
 import pandas as pd
-import numpy as np
 
 if __name__ == '__main__':
 
@@ -17,12 +16,7 @@ if __name__ == '__main__':
     # B) create matrix S and D    
 
     matrix_D = music_data.drop('name', axis=1).rename(columns={v:k for (k,v) in features_dict.items()})
-    user_ids = user_data.user_id.values.tolist()
-    song_ids = music_data.song_id.values.tolist()
-    matrix_S = pd.DataFrame(np.zeros((len(user_ids), len(song_ids))), index=user_ids, columns=song_ids)
-    for _, row in rating_data.iterrows():
-        # set each value in matrix_S to corresponding rating if exists, otherwise stays 0
-        matrix_S[row['song_id']][row['user_id']] = row['rating'] 
+    matrix_S = utils.compute_scores(user_data, music_data, rating_data)    
     
     # C) choose active user and target song
 
@@ -30,7 +24,7 @@ if __name__ == '__main__':
 
     # D) create topology
 
-    graph = create_topology(matrix_S, matrix_D, active_user, target_song)
+    graph = build_topology(matrix_S, matrix_D, active_user, target_song)
 
     # E) compute ratings
     

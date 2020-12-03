@@ -2,6 +2,7 @@
 import pandas as pd
 import random
 from pathlib import Path
+import numpy as np
 
 def get_data():
 
@@ -31,8 +32,21 @@ def get_dicts(music_data, user_data, rating_data):
 
     return [songs_dict, users_dict, features_dict]
 
+def compute_scores(user_data, music_data, rating_data):
+    user_ids = user_data.user_id.values.tolist()
+    song_ids = music_data.song_id.values.tolist()
+    matrix_S = pd.DataFrame(np.zeros((len(user_ids), len(song_ids))), index=user_ids, columns=song_ids)
+
+    for _, row in rating_data.iterrows():
+        # Set each value in matrix_S to corresponding rating if exists, otherwise stays 0
+        matrix_S[row['song_id']][row['user_id']] = row['rating']
+
+    return matrix_S
 
 def compute_similarity(u1,u2):
+    pass
+
+def get_k_nn(matrix_S, active_user):
     pass
 
 def compute_weights(matrix_D, matrix_S, active_user):
