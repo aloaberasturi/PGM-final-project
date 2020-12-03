@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 class Edge():
     """
     A class for the edges in the graph

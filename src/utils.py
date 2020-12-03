@@ -45,13 +45,14 @@ def compute_weights(matrix_D, matrix_S, active_user):
     iucb = row.drop(['user_id'], axis=1).values.sum(axis=1)
 
 def select_user_and_song(matrix_S):
-    user = random.choice(matrix_S(['user']))
-
     while True:
-        song = random.choice(matrix_S.keys()[1:])# If the active user has already rated the song try again            
-        rating = matrix_S.at(user, song)
+        user_index = random.randint(0, len(matrix_S.axes[0]) - 1)
+        song_index = random.randint(0, len(matrix_S.axes[1]) - 1)
+        rating = matrix_S.iloc[user_index, song_index]
         if (rating ==0):
             break
+    song = matrix_S.columns.values[song_index]
+    user = matrix_S.index.values[user_index]
     return (user, song)
 
 

@@ -1,9 +1,11 @@
 #!/usr/bin/python3
 
 from topology import create_topology
+from pathlib import Path
 # from inference import perform_inference
 import utils
 import pandas as pd
+import numpy as np
 
 if __name__ == '__main__':
 
@@ -12,18 +14,15 @@ if __name__ == '__main__':
     [music_data, user_data, rating_data] = utils.get_data()
     [songs_dict, users_dict, features_dict] = utils.get_dicts(music_data, user_data, rating_data)
 
-    # B) create matrix S and matrix D    
+    # B) create matrix S and D    
 
     matrix_D = music_data.drop('name', axis=1).rename(columns={v:k for (k,v) in features_dict.items()})
-    
-    import numpy as np
-    song_ids = [song_id for song_id in songs_dict.values()]  # maybe there is a more efficient way to get these instead of
-    user_ids = [user_id for user_id in users_dict.values()]  # taking them out of the dictionary?
-    matrix_S = pd.DataFrame(np.zeros((len(user_ids), len(song_ids))),index=user_ids, columns=song_ids)  # create zero matrix (set r = 0 for all values)
-    #print(matrix_S)   # showing 0 matrix
-    for ind,row in rating_data.iterrows():       # for each index, row in the rating data
-        matrix_S[row['song_id']][row['user_id']] = row['rating'] # set each value in matrix_S to corresponding rating if exists, otherwise stays 0
-    #print(matrix_S)  # matrix was updated
+    user_ids = user_data.user_id.values.tolist()
+    song_ids = music_data.song_id.values.tolist()
+    matrix_S = pd.DataFrame(np.zeros((len(user_ids), len(song_ids))), index=user_ids, columns=song_ids)
+    for _, row in rating_data.iterrows():
+        # set each value in matrix_S to corresponding rating if exists, otherwise stays 0
+        matrix_S[row['song_id']][row['user_id']] = row['rating'] 
     
     # C) choose active user and target song
 

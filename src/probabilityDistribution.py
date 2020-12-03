@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 class ProbabilityDistribution():
     """
     Class for probability distribution objects

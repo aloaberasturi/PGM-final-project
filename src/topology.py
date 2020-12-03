@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 from utils import compute_similarity
 from edge import Edge 
 from node import Node

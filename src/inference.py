@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 from utils import compute_weights
 
 def perform_inference(graph, matrix_D, matrix_S):
