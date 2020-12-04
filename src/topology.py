@@ -1,16 +1,14 @@
 #!/usr/bin/python3
-from utils import get_k_nn, get_features, get_edges
+from utils import get_k_nn, get_features, get_users, get_edges
 from edge import Edge 
 from node import User, Feature, Item
 import numpy as np
 
 def build_topology(matrix_S, matrix_D, active_user, target_song):
 
-
     # 1) *********************** STATIC TOPOLOGY ***********************
-
-    # 1.a) ********************* Content based *************************   
-      
+    # 1.a) ********************* Content based *************************        
+    
     # 1.a.1) Instantiate Acb. 
     a_cb = User(active_user, cb = True)
 
@@ -20,18 +18,16 @@ def build_topology(matrix_S, matrix_D, active_user, target_song):
     # 1.a.3) Instantiate edges from items rated by active user to A_cb (i --> A_cb)
     i_acb_edges = [Edge(i,a_cb) for i in item_nodes]
 
-    # 1.a.4) Instantiate features...
+    # 1.a.4) Instantiate features and the corresponding edges (f --> i) to their children items
     feature_nodes = get_features(item_nodes, matrix_D)
-
-    # ... and the corresponding edges (f --> i) to their children items!!
     edges = get_edges(feature_nodes, item_nodes, matrix_D)
 
-    # 1.b) ********************* Collaborative component *************************   
+    # 1.b) ********************* Collaborative component *************************       
     # 1.b.1) Instantiate Acf. Instantiate k most-similar users. 
     a_cf = User(active_user, cf = True)
+    k_nn = get_users(matrix_S, active_user, k=4)
 
     # 1.b.2) Instantiate edges from k-most similar users to Acf.
-    k_nn = get_k_nn(matrix_S, active_user)
     user_nodes = [User(user_id) for user_id in k_nn]
 
 
