@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-from utils import get_k_nn, get_features, get_users, get_edges
+from utils import get_features, get_users, get_edges
 from edge import Edge 
 from node import User, Feature, Item
 import numpy as np
@@ -25,11 +25,9 @@ def build_topology(matrix_S, matrix_D, active_user, target_song):
     # 1.b) ********************* Collaborative component *************************       
     # 1.b.1) Instantiate Acf. Instantiate k most-similar users. 
     a_cf = User(active_user, cf = True)
-    k_nn = get_users(matrix_S, active_user, k=4)
-
+    user_nodes = [User(user_id) for user_id in get_users(matrix_S, active_user, k=4)]
+ 
     # 1.b.2) Instantiate edges from k-most similar users to Acf.
-    user_nodes = [User(user_id) for user_id in k_nn]
-
 
     # 2) *********************** DYNAMIC TOPOLOGY ***********************
     

@@ -6,6 +6,8 @@ import numpy as np
 from edge import Edge
 from node import Feature
 from node import Item
+from heapq import nlargest
+from scipy import stats
 
 def get_data(data_folder=Path('../' + "data")):
     """
@@ -86,20 +88,32 @@ def compute_scores(user_data, music_data, rating_data):
 
     return matrix_S
 
-def compute_similarity(matrix_S, u1,u2):
+def compute_similarity(a_scores, u_scores):
     """
     Computes similarity between two users according to Eq.(1)
     Parameters:
     -----------
-    matrix_S: pd.dataframe
-    u1: User 
-    u2: User
+    a_scores: list of scores by active user
+    u_scores: list of scores by user ua
 
     Returns:
     --------
     double
     """
-    pass
+
+    is_common_score = [True if (i!=0 and j!=0) else False for i, j in zip(a_scores,u_scores)]
+    aux_a = list(np.array(a_scores)[is_common_score])
+    aux_u = list(np.array(u_scores)[is_common_score])
+    try:
+        pc,_ = stats.pearsonr(aux_a, aux_u) #[¡!] SOMETIMES IT RETURNS NAN!!CHECK IF THIS IS THE FUNCTION WE WANT
+    except ValueError:
+        return 0
+
+    i_a = len(np.nonzero(a_scores))
+    i_a_u = sum(is_common_score)    
+    sim = abs(pc) * (i_a_u / i_a)
+
+    return sim
 
 def compute_weights(matrix_D, matrix_S, active_user): # in process...
     # parameters m and n_k used in w(f,i)
@@ -208,8 +222,14 @@ def get_users(matrix_S, active_user, k=5):
     list
         The list of the k-nearest neighbours to active user
     """
-    print('hola')
-    return 9
+    similarities = {}
+    active_scores = matrix_S.loc[active_user].values.tolist()
+
+    for u, row in matrix_S.iterrows():
+        if (u != active_user):
+            user_scores = row.values.tolist()
+            similarities[u] = compute_similarity(active_scores, user_scores)
+    return [u for u in sorted(similarities, key=similarities.get, reverse=True)[:k]]
     
 
 def check_rating(rating):
