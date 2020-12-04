@@ -3,6 +3,9 @@ import pandas as pd
 import random
 from pathlib import Path
 import numpy as np
+from edge import Edge
+from node import Feature
+from node import Item
 
 def get_data():
 
@@ -68,6 +71,32 @@ def select_user_and_song(matrix_S):
     song = matrix_S.columns.values[song_index]
     user = matrix_S.index.values[user_index]
     return (user, song)
+
+def get_relevant_features(item, matrix_D):
+
+    # list of features relevant to item i
+    aux = matrix_D.loc[matrix_D['song_id'] == item.index]
+
+    # delete unnecessary columns 
+    aux = aux.drop(['song_id'], axis=1)
+    aux = aux.replace(0, np.nan)
+    row = aux.dropna(how='all', axis=1).columns.tolist()
+    return row
+
+def get_edges(feature_nodes, item_nodes, matrix_D):            
+    pairs = []
+    for i in item_nodes:
+        feature_list = get_relevant_features(i, matrix_D)
+        aux2 = [(f.index, i.index) for f in feature_list]
+        pairs.extend(aux2)
+    return [Edge(Feature(f), Item(i)) for (f,i) in list(set(pairs))]
+    
+
+def get_features(item_nodes, matrix_D):
+    feature_ids = []
+    for i in item_nodes:
+        feature_ids.extend(get_relevant_features(i, matrix_D))
+    return [Feature(f) for f in list(set(feature_ids))]
 
 
 def check_rating(rating):
