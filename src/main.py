@@ -13,7 +13,9 @@ if __name__ == '__main__':
     [songs_dict, users_dict, features_dict] = utils.get_dicts(music_data, user_data, rating_data)
 
     # B) create matrix S and D    
+    # matrix_D has songs as rows and features as columns
     matrix_D = music_data.drop('name', axis=1).rename(columns={v:k for (k,v) in features_dict.items()})
+    # matrix_S has users as rows and songs as columns
     matrix_S = utils.compute_scores(user_data, music_data, rating_data)    
     
     # C) choose active user and target song

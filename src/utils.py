@@ -79,12 +79,13 @@ def compute_scores(user_data, music_data, rating_data):
                 Matrix S
     """
     user_ids = user_data.user_id.values.tolist()
-    song_ids = music_data.song_id.values.tolist()
-    matrix_S = pd.DataFrame(np.zeros((len(user_ids), len(song_ids))), index=user_ids, columns=song_ids)
-
+    columns = ['user_id'] + music_data.song_id.values.tolist()
+    matrix_S = pd.DataFrame(np.zeros((len(user_ids), len(columns))), columns=columns)
+    matrix_S['user_id'] = user_ids
     for _, row in rating_data.iterrows():
         # Set each value in matrix_S to corresponding rating if exists, otherwise stays 0
-        matrix_S[row['song_id']][row['user_id']] = row['rating']
+        i = matrix_S[matrix_S['user_id'] == row['user_id']].index[0]
+        matrix_S.at[i, row['song_id']] = row['rating']
 
     return matrix_S
 
@@ -153,15 +154,15 @@ def select_user_and_song(matrix_S):
     user = matrix_S.index.values[user_index]
     return (user, song)
 
-def get_item_features(item, matrix_D):
+def get_column_tags(node, matrix):
 
     """
     Obtains list of features relevant to item i
 
     Parameters
     ----------
-    item: Item
-    matrix_D: pd.dataframe
+    node: Node (Item or User)
+    matrix: pd.DataFrame
 
     Returns
     -------
@@ -170,28 +171,28 @@ def get_item_features(item, matrix_D):
 
     """
     # 1) Find row and drop unnecessary columns
-    row = matrix_D.loc[matrix_D['song_id'] == item.index].drop(['song_id'], axis=1)
-
+    if isinstance(node, Item):
+        row = matrix.loc[matrix['song_id'] == node.index].drop(['song_id'], axis=1)
+    elif isinstance(node, User):
+        row = matrix.loc[matrix['user_id'] == node.index].drop(['user_id'], axis=1)
     # 2) Return nonzero column names
     return row.columns[row.values.nonzero()[1]].tolist()
 
-def get_edges(item_nodes, matrix_D):  
+def get_edges(nodes, matrix):  
 
     """
     Parameters:
     -----------
-    feature_nodes: list
-    item_nodes: list
-    matrix_D: pd.dataframe
+    nodes: list
+    matrix: pd.dataframe
 
     Returns:
     --------
     list
-        A list of the edges from the features in feature_nodes to the
-        corresponding items in item_nodes, w/o repetitions
+        A list of the edges to the nodes according to matrix w/o repetitions
     """       
-    feature_ids = list(set(chain.from_iterable(get_item_features(i, matrix_D) for i in item_nodes)))
-    return [Edge(Feature(f), i) for (f,i) in zip(feature_ids, item_nodes)]
+    ids = list(set(chain.from_iterable(get_column_tags(n, matrix) for n in nodes)))
+    return [Edge(Feature(f), n) for (f,n) in zip(ids, nodes)]
     
 
 def get_features(item_nodes, matrix_D):
@@ -208,7 +209,12 @@ def get_features(item_nodes, matrix_D):
         A list of all the features that are relevant to the 
         given list of item_nodes, w/o repetitions
     """
-    feature_ids = list(set(chain.from_iterable(get_item_features(i, matrix_D) for i in item_nodes)))
+    if isinstance(item_nodes, list):
+        feature_ids = list(set(chain.from_iterable(get_column_tags(i, matrix_D) for i in item_nodes)))
+    else:
+        i = item_nodes # just one item 
+        feature_ids = get_column_tags(i, matrix_D)
+
     return [Feature(f) for f in feature_ids]
 
 def get_users(active_user, matrix_S, k=5):
@@ -234,7 +240,29 @@ def get_users(active_user, matrix_S, k=5):
             if sim != 0:
                 similarities[u] = sim
     return [User(u) for u in sorted(similarities, key=similarities.get, reverse=True)[:k]]
-    
+
+def get_u_minus(user_nodes, target_song, matrix_S):
+    """
+    Returns list of users from user_nodes that haven't rated target song
+
+    Parameters
+    ----------
+    user_nodes: list
+    target_song: Item
+    matrix_S: pd.DataFrame
+
+    Returns
+    -------
+    list
+        A list with the users in U-
+    """
+    # 1) Select only rows corresponding to user_nodes
+    reduced_S = matrix_S.loc[[u.index for u in user_nodes]]
+
+    # 2) Return only users in U-
+    u_indexes = reduced_S[reduced_S[target_song] != 0.0].index.tolist()
+    return [User(u_) for u_ in u_indexes]
+
 
 def check_rating(rating):
     """
