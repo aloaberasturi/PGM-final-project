@@ -13,22 +13,22 @@ def build_topology(matrix_S, matrix_D, active_user, target_song):
     a_cb = User(active_user, cb = True)
 
     # 1.a.2) Instantiate songs reviewed by the active user
-    item_nodes = [ Item(i) for i in matrix_S.loc[[active_user]].columns.tolist() if matrix_S.loc[active_user, i]!=0 ]
+    item_nodes = [Item(i) for i in matrix_S.loc[[active_user]].columns.tolist() if matrix_S.loc[active_user, i]!=0]
 
     # 1.a.3) Instantiate edges from items rated by active user to A_cb (i --> A_cb)
     i_acb_edges = [Edge(i,a_cb) for i in item_nodes]
 
     # 1.a.4) Instantiate features and the corresponding edges (f --> i) to their children items
     feature_nodes = get_features(item_nodes, matrix_D)
-    edges = get_edges(feature_nodes, item_nodes, matrix_D)
+    edges = get_edges(item_nodes, matrix_D)
 
     # 1.b) ********************* Collaborative component *************************       
     # 1.b.1) Instantiate Acf. Instantiate k most-similar users. 
     a_cf = User(active_user, cf = True)
-    user_nodes = [User(user_id) for user_id in get_users(matrix_S, active_user, k=4)]
+    user_nodes = get_users(active_user, matrix_S, k=4)
  
     # 1.b.2) Instantiate edges from k-most similar users to Acf.
-
+    i_acf_edges = [Edge(u, a_cf) for u in user_nodes]
     # 2) *********************** DYNAMIC TOPOLOGY ***********************
     
     # 2.a) ********************* Content based *************************

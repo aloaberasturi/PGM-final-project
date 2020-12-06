@@ -4,10 +4,10 @@ import random
 from pathlib import Path
 import numpy as np
 from edge import Edge
-from node import Feature
-from node import Item
+from node import Feature, Item, User
 from heapq import nlargest
 from scipy import stats
+from itertools import chain
 
 def get_data(data_folder=Path('../' + "data")):
     """
@@ -23,7 +23,7 @@ def get_data(data_folder=Path('../' + "data")):
     Returns
     -------
     list 
-        List of three pd.Series (on per file)
+        List of three pd.dataframe (one per file)
     """
 
     music_data = data_folder / "music_data.csv"
@@ -57,7 +57,7 @@ def get_dicts(music_data, user_data, rating_data):
         names to indexes and viceversa
     """
 
-    songs_dict = pd.Series(music_data.song_id.values, index = music_data.name).to_dict() #maybe here?
+    songs_dict = pd.Series(music_data.song_id.values, index = music_data.name).to_dict() 
     users_dict = pd.Series(user_data.user_id.values, index = user_data.name).to_dict()
     features = list(music_data.keys()[2:])
     keys = ["f_%i" % i for i in range(len(features))]
@@ -88,31 +88,38 @@ def compute_scores(user_data, music_data, rating_data):
 
     return matrix_S
 
-def compute_similarity(a_scores, u_scores):
+def compute_similarity(au_row, u_row):
     """
     Computes similarity between two users according to Eq.(1)
     Parameters:
     -----------
-    a_scores: list of scores by active user
-    u_scores: list of scores by user ua
+    au_row: pd.DataFrame
+                        Scores by active user 
+    u_row: pd.DataFrame
+                        Scores by another user
 
     Returns:
     --------
     double
     """
 
-    is_common_score = [True if (i!=0 and j!=0) else False for i, j in zip(a_scores,u_scores)]
-    aux_a = list(np.array(a_scores)[is_common_score])
-    aux_u = list(np.array(u_scores)[is_common_score])
+    is_common_score = [True if (i!=0 and j!=0) else False for i, j in zip(au_row.values.tolist(), u_row.values.tolist())]
+    aux_active_user = au_row[is_common_score].values
+    aux_user = u_row[is_common_score].values
+   
     try:
-        pc,_ = stats.pearsonr(aux_a, aux_u) #[¡!] SOMETIMES IT RETURNS NAN!!CHECK IF THIS IS THE FUNCTION WE WANT
+        pc = np.corrcoef(aux_active_user, aux_user)[0][1]
     except ValueError:
-        return 0
+        return 0    
 
-    i_a = len(np.nonzero(a_scores))
+    if np.isnan(pc):
+        return 0 # The NaN, in this case, is interpreted as no correlation between the two variables. 
+                 # The correlation describes how much one variable changes as the other variable changes. 
+                 # That requires both variables to change.  
+
+    i_a = np.count_nonzero(au_row, axis=0)
     i_a_u = sum(is_common_score)    
     sim = abs(pc) * (i_a_u / i_a)
-
     return sim
 
 def compute_weights(matrix_D, matrix_S, active_user): # in process...
@@ -147,8 +154,10 @@ def select_user_and_song(matrix_S):
     return (user, song)
 
 def get_item_features(item, matrix_D):
+
     """
     Obtains list of features relevant to item i
+
     Parameters
     ----------
     item: Item
@@ -160,15 +169,14 @@ def get_item_features(item, matrix_D):
         A list with the names of the features relevant to item
 
     """
-    # 1) Select row
-    aux = matrix_D.loc[matrix_D['song_id'] == item.index]
-    # 2) Drop unnecessary columns 
-    aux = aux.drop(['song_id'], axis=1)
-    aux = aux.replace(0, np.nan)
-    row = aux.dropna(how='all', axis=1).columns.tolist()
-    return row
+    # 1) Find row and drop unnecessary columns
+    row = matrix_D.loc[matrix_D['song_id'] == item.index].drop(['song_id'], axis=1)
 
-def get_edges(feature_nodes, item_nodes, matrix_D):  
+    # 2) Return nonzero column names
+    return row.columns[row.values.nonzero()[1]].tolist()
+
+def get_edges(item_nodes, matrix_D):  
+
     """
     Parameters:
     -----------
@@ -181,16 +189,13 @@ def get_edges(feature_nodes, item_nodes, matrix_D):
     list
         A list of the edges from the features in feature_nodes to the
         corresponding items in item_nodes, w/o repetitions
-    """          
-    pairs = []
-    for i in item_nodes:
-        feature_ids = get_item_features(i, matrix_D)
-        pairs.extend([(f.index, i.index) for f in feature_ids])
-
-    return [Edge(Feature(f), Item(i)) for (f,i) in list(set(pairs))]
+    """       
+    feature_ids = list(set(chain.from_iterable(get_item_features(i, matrix_D) for i in item_nodes)))
+    return [Edge(Feature(f), i) for (f,i) in zip(feature_ids, item_nodes)]
     
 
 def get_features(item_nodes, matrix_D):
+
     """
     Parameters:
     -----------
@@ -203,17 +208,15 @@ def get_features(item_nodes, matrix_D):
         A list of all the features that are relevant to the 
         given list of item_nodes, w/o repetitions
     """
-    feature_ids = []
-    for i in item_nodes:
-        feature_ids.extend(get_item_features(i, matrix_D))
-    return [Feature(f) for f in list(set(feature_ids))]
+    feature_ids = list(set(chain.from_iterable(get_item_features(i, matrix_D) for i in item_nodes)))
+    return [Feature(f) for f in feature_ids]
 
-def get_users(matrix_S, active_user, k=5):
+def get_users(active_user, matrix_S, k=5):
     """
     Parameters
     ----------
-    matrix_S: pd.dataframe
     active_user: User
+    matrix_S: pd.dataframe
     k: int 
         The number of nearest neighbours to return
 
@@ -223,13 +226,14 @@ def get_users(matrix_S, active_user, k=5):
         The list of the k-nearest neighbours to active user
     """
     similarities = {}
-    active_scores = matrix_S.loc[active_user].values.tolist()
+    au_row = matrix_S.loc[active_user] # au == "active user"
 
     for u, row in matrix_S.iterrows():
-        if (u != active_user):
-            user_scores = row.values.tolist()
-            similarities[u] = compute_similarity(active_scores, user_scores)
-    return [u for u in sorted(similarities, key=similarities.get, reverse=True)[:k]]
+        if not row.equals(au_row):
+            sim = compute_similarity(au_row, row)
+            if sim != 0:
+                similarities[u] = sim
+    return [User(u) for u in sorted(similarities, key=similarities.get, reverse=True)[:k]]
     
 
 def check_rating(rating):
