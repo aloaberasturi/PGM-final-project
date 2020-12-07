@@ -31,12 +31,18 @@ def build_topology(matrix_S, matrix_D, active_user, target_song):
     i_acf_edges = [Edge(u, a_cf) for u in user_nodes]
     # 2) *********************** DYNAMIC TOPOLOGY ***********************
     
+
     # 2.a) ********************* Content based *************************
-    # 2.a.1) Select target item and instantiate it. 
-    # 2.a.2) Instantiate edges from all features describing target item to target item. 
+    # 2.a.1) Select target item and instantiate it.
+    target_node = Item(target_song)
+    # 2.a.2) Instantiate edges from all features describing target item to target item.
+    target_feature_ids = utils.get_item_features(target_node, matrix_D)
+    target_feature_item_edges = [Edge(Feature(f), target_node) for f in target_feature_ids]
+
     # 2.b) ********************* Collaborative component ************************* 
     # 2.b.1) From the set of k-most similar users, get those that didn't rate the target item, U_. 
-    # 2.b.2) Instantiate edges from items rated by users in U_ to users in U_. 
+    # 2.b.2) Instantiate edges from items rated by users in U_ to users in U_.
+    [u_min, u_min_edges] = utils.get_u_min(user_nodes, target_song, item_nodes, matrix_S)
 
-    graph = [nodes, edges]
-    return graph
+    #graph = [nodes, edges]
+    #return graph
