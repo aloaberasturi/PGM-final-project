@@ -107,7 +107,6 @@ def compute_similarity(au_row, u_row):
     --------
     double
     """
-
     is_common_score = [True if (i!=0 and j!=0) else False for i, j in zip(au_row.values.tolist(), u_row.values.tolist())]
     aux_active_user = au_row[is_common_score].values
     aux_user = u_row[is_common_score].values
@@ -142,12 +141,12 @@ def select_user_and_song(matrix_S):
     """
     while True:
         user_index = random.randint(0, len(matrix_S.axes[0]) - 1)
-        song_index = random.randint(0, len(matrix_S.axes[1]) - 1)
+        song_index = random.randint(0, len(matrix_S.axes[1]) - 2)
         rating = matrix_S.iloc[user_index, song_index]
         if (rating ==0):
             break
-    song = matrix_S.columns.values[song_index]
-    user = matrix_S.index.values[user_index]
+    song = matrix_S.columns.values[1:][song_index]
+    user = matrix_S['user_id'][user_index]
     return (user, song)
 
 def get_column_tags(node, matrix):
@@ -230,12 +229,14 @@ def get_users(active_user, matrix_S, k=5):
         The list of the k-nearest neighbours to active user
     """
     similarities = {}
-    au_row = matrix_S.loc[active_user] # au == "active user"
+    au_row = matrix_S.loc[matrix_S['user_id'] == active_user].squeeze() # au == "active user"
 
-    for u, row in matrix_S.iterrows():
+    for row_index in matrix_S.index:
+        row = matrix_S.loc[row_index]
         if not row.equals(au_row):
-            sim = compute_similarity(au_row, row)
+            sim = compute_similarity(au_row.drop('user_id'), row.drop('user_id'))
             if sim != 0:
+                u = int(row['user_id'])
                 similarities[u] = sim
     return [User(u) for u in sorted(similarities, key=similarities.get, reverse=True)[:k]]
 
@@ -255,10 +256,10 @@ def get_u_minus(user_nodes, target_song, matrix_S):
         A list with the users in U-
     """
     # 1) Select only rows corresponding to user_nodes
-    reduced_S = matrix_S.loc[[u.index for u in user_nodes]]
+    reduced_S = matrix_S.loc[matrix_S['user_id'].isin([u.index for u in user_nodes])]
 
     # 2) Return only users in U-
-    u_indexes = reduced_S[reduced_S[target_song] != 0.0].index.tolist()
+    u_indexes = reduced_S[reduced_S[target_song.index] == 0.0]['user_id'].tolist()
     return [User(u_) for u_ in u_indexes]
 
 # ********************** Inference Functions ********************** 

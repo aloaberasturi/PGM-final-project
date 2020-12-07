@@ -28,9 +28,9 @@ if __name__ == '__main__':
     rating = perform_inference(graph, matrix_D, matrix_S, item_instantiation=False)
 
     # F) classify rating
-    user_opinion = utils.check_rating(rating)
+    # user_opinion = utils.check_rating(rating)
 
-    print("User %s would rate song %s with a %i" % (active_user, target_song, rating))
-    print("The user might think that %s" % user_opinion)
+    # print("User %s would rate song %s with a %i" % (active_user, target_song, rating))
+    # print("The user might think that %s" % user_opinion)
 
 

@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 from utils import compute_weights
 from probabilityDistribution import ProbabilityDistribution
+import numpy as np
 
 def perform_inference(graph, matrix_D, matrix_S, item_instantiation=True):
 
@@ -27,11 +28,20 @@ def perform_inference(graph, matrix_D, matrix_S, item_instantiation=True):
 
     # Propagate to items using Theorem 1.
 
-    # Propagate to Acb and Ui using Theorem 1.// (see Fig. 3b).
+    # Propagate to Acb and Ui using Theorem 1.
 
     # *************** Collaborative propagation ***************
 
     # For each Uk+ set Pr(Uk = rk,j|evcf) = 1.// Collaborative evidence
+    ev_cf = graph.get_u_plus(matrix_S)
+    consequent = None
+    for user in ev_cf:
+        rating = int(user.get_rating())
+        if rating == 'unknown':
+            raise ValueError('This user does not belong to U+!')
+        probability_values = np.zeros(len(user.support)).tolist()
+        probability_values[rating - 1] = 1.0
+        user.add_probability(consequent, probability_values)
     # Propagate to Acf node using Theorem 1.// (see Fig. 3c)
     # Combine content-based and collaborative likelihoods at hybrid node Ah
     # Select the predicted rating.
