@@ -235,6 +235,23 @@ def get_users(active_user, matrix_S, k=5):
                 similarities[u] = sim
     return [User(u) for u in sorted(similarities, key=similarities.get, reverse=True)[:k]]
     
+def get_user_items(user, matrix_S):   # function for getting the items of each user
+    row = matrix_S.loc[[user.index]]
+    return row.columns[row.values.nonzero()[1]].tolist()
+
+
+def get_u_min(user_nodes, target_song, item_nodes, matrix_S):
+    u_min= []
+    u_min_edges = []
+    for u in user_nodes:
+        user_item_ids = get_user_items(u, matrix_S)
+
+        # check if user belongs in U-:
+        if target_song not in user_item_ids:
+            u_min.append(u)
+            edges = [Edge(i, u) for i in item_nodes if (i.index in user_item_ids)]
+            u_min_edges.append(edges)
+    return [u_min, u_min_edges]
 
 def check_rating(rating):
     """
