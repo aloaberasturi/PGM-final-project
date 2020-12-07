@@ -10,12 +10,12 @@ class Node:
 
     def __init__(self, index):
         self.index = index
+        self.support = None
         self.probs = []
 
-    def add_probability(self, prob):
-        # self.support != prob.support:
-        # raise("The support of the distribution isn't compatible with the node's")
-        self.probs.append(prob)
+    def add_probability(self, consequence, probability_values):
+        distribution = ProbabilityDistribution(self, consequence, probability_values)
+        self.probs.append(distribution)
 
 class User(Node):
     def __init__(self, index, cb=False, cf=False):

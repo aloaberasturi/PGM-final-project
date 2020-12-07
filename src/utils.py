@@ -9,6 +9,8 @@ from heapq import nlargest
 from scipy import stats
 from itertools import chain
 
+#  ********************** Preprocessing functions ********************** 
+
 def get_data(data_folder=Path('../' + "data")):
     """
     Receives path to data. Data is stored in three files, namely:
@@ -89,6 +91,8 @@ def compute_scores(user_data, music_data, rating_data):
 
     return matrix_S
 
+# ********************** Topology functions ********************** 
+
 def compute_similarity(au_row, u_row):
     """
     Computes similarity between two users according to Eq.(1)
@@ -123,14 +127,6 @@ def compute_similarity(au_row, u_row):
     sim = abs(pc) * (i_a_u / i_a)
     return sim
 
-def compute_weights(matrix_D, matrix_S, active_user): # in process...
-    # parameters m and n_k used in w(f,i)
-    m = len(matrix_D['song_id'])
-    frequencies = {'n_{}'.format(i): sum(matrix_D['f_%s' % i]) for i in range(len(matrix_D.keys()[1:]))}
-
-    # parameter iucb == |I(Ucb)| used in w(i,u)    
-    row = matrix_S[matrix_S['user_id'] == active_user]
-    iucb = row.drop(['user_id'], axis=1).values.sum(axis=1)
 
 def select_user_and_song(matrix_S):
     """
@@ -265,6 +261,22 @@ def get_u_minus(user_nodes, target_song, matrix_S):
     u_indexes = reduced_S[reduced_S[target_song] != 0.0].index.tolist()
     return [User(u_) for u_ in u_indexes]
 
+# ********************** Inference Functions ********************** 
+
+def compute_weights(matrix_D, matrix_S, active_user): # in process...
+    # parameters m and n_k used in w(f,i)
+    m = len(matrix_D['song_id'])
+    frequencies = {'n_{}'.format(i): sum(matrix_D['f_%s' % i]) for i in range(len(matrix_D.keys()[1:]))}
+
+    # parameter iucb == |I(Ucb)| used in w(i,u)    
+    row = matrix_S[matrix_S['user_id'] == active_user]
+    iucb = row.drop(['user_id'], axis=1).values.sum(axis=1)
+
+def theorem_1():
+    pass
+
+def theorem_2():
+    pass
 
 def check_rating(rating):
     """
