@@ -2,6 +2,7 @@
 from utils import get_features, get_users, get_edges, get_u_minus
 from edge import Edge 
 from node import User, Feature, Item
+from graph import Graph
 import numpy as np
 
 def build_topology(matrix_S, matrix_D, active_user, target_song):
@@ -33,7 +34,7 @@ def build_topology(matrix_S, matrix_D, active_user, target_song):
     # 2) *********************** DYNAMIC TOPOLOGY ***********************    
     # 2.a) ********************* Content based *************************
     # 2.a.1) Instantiate target item 
-    target_song_node = Item(target_song) 
+    target_song_node = Item(target_song, is_target=True) 
 
     # 2.a.2) Instantiate edges from all features describing target item to target item. 
     target_features_nodes = get_features(target_song_node, matrix_D)
@@ -47,11 +48,14 @@ def build_topology(matrix_S, matrix_D, active_user, target_song):
     # 2.b.2) Instantiate edges from items rated by users in U_ to users in U_. 
     i_u_minus_edges = get_edges(u_minus, matrix_S)
 
+    # Return graph
     nodes = item_nodes + [target_song_node] + \
             feature_nodes + [target_features_nodes] + \
             user_nodes + u_minus + [a_cb] + [a_cf] 
 
     edges = i_acb_edges + f_i_edges + u_acf_edges + \
             f_target_song_edges + i_u_minus_edges
-    graph = [nodes, edges]
+
+    graph = Graph(nodes, edges)
+    
     return graph

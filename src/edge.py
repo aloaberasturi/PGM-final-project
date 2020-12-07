@@ -5,3 +5,5 @@ class Edge():
     """
     def __init__(self, x, y):
         self.pair = (x,y)
+        self.x = x
+        self.y = y

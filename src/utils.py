@@ -23,7 +23,7 @@ def get_data(data_folder=Path('../' + "data")):
     Returns
     -------
     list 
-        List of three pd.dataframe (one per file)
+        List of three pd.DataFrame (one per file)
     """
 
     music_data = data_folder / "music_data.csv"
@@ -44,11 +44,11 @@ def get_dicts(music_data, user_data, rating_data):
     """
     Parameters
     -----------    
-    music_data : pd.dataframe
+    music_data : pd.DataFrame
 
-    user_data: pd.dataframe
+    user_data: pd.DataFrame
 
-    rating_data:pd.dataframe
+    rating_data:pd.DataFrame
     
     Returns
     -------
@@ -69,13 +69,13 @@ def compute_scores(user_data, music_data, rating_data):
     """
     Parameters:
     -----------
-    user_data: pd.dataframe
-    music_data: pd.dataframe
-    rating_data: pd.dataframe
+    user_data: pd.DataFrame
+    music_data: pd.DataFrame
+    rating_data: pd.DataFrame
 
     Returns:
     --------
-    pd.dataframe
+    pd.DataFrame
                 Matrix S
     """
     user_ids = user_data.user_id.values.tolist()
@@ -137,7 +137,7 @@ def select_user_and_song(matrix_S):
     Selects a random user as active user and a song that hasn't rated as target song 
     Parameters:
     -----------
-    matrix_S: pd.dataframe
+    matrix_S: pd.DataFrame
 
     Returns:
     --------
@@ -157,7 +157,8 @@ def select_user_and_song(matrix_S):
 def get_column_tags(node, matrix):
 
     """
-    Obtains list of features relevant to item i
+    Obtains list of features relevant to item node according to matrix
+    (or list of songs relevant to user node according to matrix)
 
     Parameters
     ----------
@@ -168,6 +169,7 @@ def get_column_tags(node, matrix):
     -------
     list
         A list with the names of the features relevant to item
+        or the songs rated by the user
 
     """
     # 1) Find row and drop unnecessary columns
@@ -184,7 +186,7 @@ def get_edges(nodes, matrix):
     Parameters:
     -----------
     nodes: list
-    matrix: pd.dataframe
+    matrix: pd.DataFrame
 
     Returns:
     --------
@@ -201,7 +203,7 @@ def get_features(item_nodes, matrix_D):
     Parameters:
     -----------
     item_nodes: list 
-    matrix_D: pd.dataframe
+    matrix_D: pd.DataFrame
 
     Returns:
     --------
@@ -222,7 +224,7 @@ def get_users(active_user, matrix_S, k=5):
     Parameters
     ----------
     active_user: User
-    matrix_S: pd.dataframe
+    matrix_S: pd.DataFrame
     k: int 
         The number of nearest neighbours to return
 
@@ -276,6 +278,7 @@ def check_rating(rating):
     -------
     str
     """
+    
     if (rating < 3):
         opinion = 'the song is awful! :('
     elif (3 <= rating < 5): 
