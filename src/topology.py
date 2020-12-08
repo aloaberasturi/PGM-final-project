@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-from utils import get_features, get_users, get_edges, get_u_minus
+from utils import get_features, get_users, get_edges, get_u_min, get_u_minus
 from edge import Edge 
 from node import User, Feature, Item
 from graph import Graph
@@ -35,6 +35,7 @@ def build_topology(matrix_S, matrix_D, active_user, target_song):
     # 2) *********************** DYNAMIC TOPOLOGY ***********************    
     # 2.a) ********************* Content based *************************
     # 2.a.1) Set target item 
+    # check if it is already instantiated. Otherwise, instantiate
     try:
         target_song_node = [i for i in item_nodes if i.index == target_song][0]
         target_song_node.set_as_target()
@@ -47,18 +48,37 @@ def build_topology(matrix_S, matrix_D, active_user, target_song):
     f_target_song_edges = [Edge(f, target_song_node) for f in target_features_nodes]
 
     # 2.b) ********************* Collaborative component ************************* 
-    # 2.b.1) From the set of k-most similar users, get those that didn't rate the target item, U_.     
-    u_minus = get_u_minus([u for u in user_nodes if u.index != active_user], target_song_node, matrix_S)
 
-    # 2.b.2) Instantiate edges from items rated by users in U_ to users in U_. 
-    i_u_minus_edges = get_edges(u_minus, matrix_S)
+    # ======= Alejandra
+    # 2.b.1) From the set of k-most similar users, get those that didn't rate the target item, U_.     
+    # u_minus = get_u_minus([u for u in user_nodes if u.index != active_user], target_song_node, matrix_S)
+
+    # # 2.b.2) Instantiate edges from items rated by users in U_ to users in U_. 
+    # i_u_minus_edges = get_edges(u_minus, matrix_S)
+
+    # # Return graph
+    # nodes = item_nodes + feature_nodes + user_nodes + [a_cb] + [a_cf] 
+
+    # edges = i_acb_edges + f_i_edges + u_acf_edges + \
+    #         f_target_song_edges + i_u_minus_edges
+
+    # graph = Graph(nodes, edges)
+    
+    # return graph
+    
+# ======= Federico
+    # 2.b.1) From the set of k-most similar users, get those that didn't rate the target item, U_.
+    u_min = get_u_min(user_nodes, target_song, item_nodes, matrix_S)
+    # 2.b.2) Instantiate edges from items rated by users in U_ to users in U_.
+    u_min_edges = get_edges(u_min, matrix_S)
 
     # Return graph
     nodes = item_nodes + feature_nodes + user_nodes + [a_cb] + [a_cf] 
 
     edges = i_acb_edges + f_i_edges + u_acf_edges + \
-            f_target_song_edges + i_u_minus_edges
+            f_target_song_edges + u_min_edges
 
     graph = Graph(nodes, edges)
     
     return graph
+

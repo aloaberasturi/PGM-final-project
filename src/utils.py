@@ -278,6 +278,24 @@ def theorem_1():
 
 def theorem_2():
     pass
+# =======
+    
+def get_user_items(user, matrix_S):   # function for getting the items of each user
+    row = matrix_S.loc[matrix_S['user_id'] == user.index]
+    return row.columns[row.values.nonzero()[1]].tolist()
+
+
+def get_u_min(user_nodes, target_song, item_nodes, matrix_S):
+    u_min= []
+    u_min_edges = []
+    for u in user_nodes:
+        user_item_ids = get_user_items(u, matrix_S)
+
+        # check if user belongs in U-:
+        if target_song not in user_item_ids:
+            u_min.append(u)
+    return u_min
+# >>>>>>> federico
 
 def check_rating(rating):
     """
