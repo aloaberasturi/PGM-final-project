@@ -11,6 +11,7 @@ class ProbabilityDistribution():
         if (probabilities != None):
             self.probabilities = {sample: p for (sample, p) in zip(self.support, probabilities)}
         self.check_integrity()
+        
     def calculate_min_max_support_values(self):
         try:
             self.max_support_value = max(self.support)

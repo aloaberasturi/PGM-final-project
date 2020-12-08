@@ -5,6 +5,9 @@ import utils
 
 class Graph():
     def __init__(self, nodes, edges):
+        self.nodes = nodes
+        self.edges = edges
+
         # types of nodes
         self.user_nodes = [u for u in nodes if isinstance(u, User)]
         self.item_nodes = [i for i in nodes if isinstance(i, Item)]
@@ -15,12 +18,19 @@ class Graph():
         self.feature_item_edges = [f_i for f_i in edges if (isinstance(f_i.x, Feature) and isinstance(f_i.y, Item))]
         self.u_acf_edges = [u_acf for u_acf in edges if (isinstance(u_acf.x, User) and isinstance(u_acf.y, User))]
 
-    def get_active_user(self):       
+    def get_a_cf(self):       
         return next((u for u in self.user_nodes if u.is_cf == True), None)
+    
+    def get_a_cb(self):
+        return next((u for u in self.user_nodes if u.is_cb == True), None)   
+
+    def get_u_minus(self, matrix_S):
+        target_item = self.get_target_item()
+        return [u_ for u_ in utils.get_u_minus(self.user_nodes, target_item, matrix_S)]
     
     def get_u_plus(self, matrix_S):
         target_item = self.get_target_item()
-        active_user_index = self.get_active_user().index
+        active_user_index = self.get_a_cf().index
         u_minus_indexes = [u_.index for u_ in utils.get_u_minus(self.user_nodes, target_item, matrix_S)]
         u_plus = [u for u in self.user_nodes if (u.index not in u_minus_indexes and u.index != active_user_index)]
         for u in u_plus:
@@ -32,3 +42,21 @@ class Graph():
     
     def get_target_features(self):
         return [edge.x for edge in self.feature_item_edges if edge.y.is_target]
+
+    def get_parents(self, node):
+
+        if (isinstance(node, User) and not node.is_cf):
+            return [e.x for e in self.item_user_edges if e.y.index == node.index]
+        elif (isinstance(node, User) and node.is_cf):
+            return [e.x for e in self.u_acf_edges if e.y.index == node.index]
+        else:
+            return [e.x for e in self.feature_item_edges if e.y.index == node.index]
+
+    def get_children(self, node):
+        
+        if (isinstance(node, User) and not node.is_cf):
+            return [e.y for e in self.item_user_edges if e.x.index == node.index]
+        elif (isinstance(node, User) and node.is_cf):
+            return [e.y for e in self.u_acf_edges if e.x.index == node.index]
+        else:
+            return [e.y for e in self.feature_item_edges if e.x.index == node.index]

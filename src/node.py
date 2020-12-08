@@ -13,8 +13,12 @@ class Node:
         self.support = None
         self.probs = []
 
-    def add_probability(self, consequence, probability_values):
-        distribution = ProbabilityDistribution(self, consequence, probability_values)
+    def get_prob(self, sample, consequent):
+        prob = [p for p in self.probs if (p.consequent == consequent)][0]
+        return prob.get_prob(sample)
+
+    def add_probability(self, consequent, probability_values):
+        distribution = ProbabilityDistribution(self, consequent, probability_values)
         self.probs.append(distribution)
 
 class User(Node):
@@ -22,19 +26,19 @@ class User(Node):
         super().__init__(index)
         self.is_cb = cb
         self.is_cf = cf
-        self.rating = 'unknown'
+        self.rating = {}
         self.support = np.arange(1, 10 + 1) # ratings go from 1 to 10. 0 is only used when
                                             # the user hasn't rated yet  
     
-    def set_rating(self, matrix_S, target_song):
+    def set_rating(self, matrix_S, song):
         """
         Sets rating for the target song
         """
-        rating = matrix_S.loc[matrix_S['user_id'] == self.index][target_song.index].values[0]
-        self.rating = rating
+        rating = matrix_S.loc[matrix_S['user_id'] == self.index][song.index].values[0]
+        self.rating[song.index] = rating
     
-    def get_rating(self):
-        return self.rating
+    def get_rating(self, song):
+        return self.rating[song.index]
 
 class Item(Node):
     def __init__(self, index, is_target=False):

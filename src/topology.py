@@ -22,7 +22,7 @@ def build_topology(matrix_S, matrix_D, active_user, target_song):
 
     # 1.a.4) Instantiate features and the corresponding edges (f --> i) to their children items
     feature_nodes = get_features(item_nodes, matrix_D)
-    f_i_edges = get_edges(item_nodes, matrix_D)
+    f_i_edges = get_edges(item_nodes, matrix_D, 'f-i')
 
     # 1.b) ********************* Collaborative component *************************       
     # 1.b.1) Instantiate Acf. Instantiate k most-similar users. 
@@ -69,8 +69,9 @@ def build_topology(matrix_S, matrix_D, active_user, target_song):
 # ======= Federico
     # 2.b.1) From the set of k-most similar users, get those that didn't rate the target item, U_.
     u_min = get_u_min(user_nodes, target_song, item_nodes, matrix_S)
+
     # 2.b.2) Instantiate edges from items rated by users in U_ to users in U_.
-    u_min_edges = get_edges(u_min, matrix_S)
+    u_min_edges = get_edges(u_min, matrix_S, 'i-u')
 
     # Return graph
     nodes = item_nodes + feature_nodes + user_nodes + [a_cb] + [a_cf] 

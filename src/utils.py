@@ -175,21 +175,31 @@ def get_column_tags(node, matrix):
     # 2) Return nonzero column names
     return row.columns[row.values.nonzero()[1]].tolist()
 
-def get_edges(nodes, matrix):  
+def get_edges(nodes, matrix, type):  
 
     """
     Parameters:
     -----------
     nodes: list
     matrix: pd.DataFrame
+    type: str
 
     Returns:
     --------
     list
         A list of the edges to the nodes according to matrix w/o repetitions
     """       
-    ids = list(set(chain.from_iterable(get_column_tags(n, matrix) for n in nodes)))
-    return [Edge(Feature(f), n) for (f,n) in zip(ids, nodes)]
+    # for node in nodes:
+    #     row = matrix_S.loc[matrix_S['user_id'] == active_user].squeeze()
+    edges = []
+    for n in nodes:
+        ids = get_column_tags(n, matrix)
+    # ids = list(set(chain.from_iterable(get_column_tags(n, matrix) for n in nodes)))
+        if type == 'f-i':
+            edges.extend([Edge(Feature(f), n) for f in ids])
+        elif type == 'i-u':
+            edges.extend([Edge(Item(f), n) for f in ids])
+    return edges
     
 
 def get_features(item_nodes, matrix_D):
@@ -262,24 +272,7 @@ def get_u_minus(user_nodes, target_song, matrix_S):
     u_indexes = reduced_S[reduced_S[target_song.index] == 0.0]['user_id'].tolist()
     return [User(u_) for u_ in u_indexes]
 
-# ********************** Inference Functions ********************** 
-
-def compute_weights(matrix_D, matrix_S, active_user): # in process...
-    # parameters m and n_k used in w(f,i)
-    m = len(matrix_D['song_id'])
-    frequencies = {'n_{}'.format(i): sum(matrix_D['f_%s' % i]) for i in range(len(matrix_D.keys()[1:]))}
-
-    # parameter iucb == |I(Ucb)| used in w(i,u)    
-    row = matrix_S[matrix_S['user_id'] == active_user]
-    iucb = row.drop(['user_id'], axis=1).values.sum(axis=1)
-
-def theorem_1():
-    pass
-
-def theorem_2():
-    pass
 # =======
-    
 def get_user_items(user, matrix_S):   # function for getting the items of each user
     row = matrix_S.loc[matrix_S['user_id'] == user.index]
     return row.columns[row.values.nonzero()[1]].tolist()
@@ -296,6 +289,8 @@ def get_u_min(user_nodes, target_song, item_nodes, matrix_S):
             u_min.append(u)
     return u_min
 # >>>>>>> federico
+
+# ********************** Inference Functions **********************     
 
 def check_rating(rating):
     """
