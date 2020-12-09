@@ -19,14 +19,15 @@ class Graph():
         self.u_acf_edges = [u_acf for u_acf in edges if (isinstance(u_acf.x, User) and isinstance(u_acf.y, User))]
 
     def get_a_cf(self):       
-        return next((u for u in self.user_nodes if u.is_cf == True), None)
+        return next((u for u in self.user_nodes if u.is_cf), None)
     
     def get_a_cb(self):
-        return next((u for u in self.user_nodes if u.is_cb == True), None)   
+        return next((u for u in self.user_nodes if u.is_cb), None)   
 
     def get_u_minus(self, matrix_S):
         target_item = self.get_target_item()
-        return [u_ for u_ in utils.get_u_minus(self.user_nodes, target_item, matrix_S)]
+        users = [u for u in self.user_nodes if (not u.is_cf and not u.is_cb)]
+        return [u_ for u_ in utils.get_u_minus(users, target_item, matrix_S)]
     
     def get_u_plus(self, matrix_S):
         target_item = self.get_target_item()
@@ -44,7 +45,6 @@ class Graph():
         return [edge.x for edge in self.feature_item_edges if edge.y.is_target]
 
     def get_parents(self, node):
-
         if (isinstance(node, User) and not node.is_cf):
             return [e.x for e in self.item_user_edges if e.y.index == node.index]
         elif (isinstance(node, User) and node.is_cf):
@@ -52,11 +52,12 @@ class Graph():
         else:
             return [e.x for e in self.feature_item_edges if e.y.index == node.index]
 
-    def get_children(self, node):
-        
+    def get_children(self, node):        # make this more elegant, less verbose
         if (isinstance(node, User) and not node.is_cf):
             return [e.y for e in self.item_user_edges if e.x.index == node.index]
         elif (isinstance(node, User) and node.is_cf):
             return [e.y for e in self.u_acf_edges if e.x.index == node.index]
-        else:
+        elif (isinstance(node, Feature)):
             return [e.y for e in self.feature_item_edges if e.x.index == node.index]
+        elif (isinstance(node, Item)):
+            return [e.y for e in self.item_user_edges if e.x.index == node.index]

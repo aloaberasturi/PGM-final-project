@@ -10,16 +10,23 @@ class Node:
 
     def __init__(self, index):
         self.index = index
-        self.support = None
         self.probs = []
 
-    def get_prob(self, sample, consequent):
-        prob = [p for p in self.probs if (p.consequent == consequent)][0]
-        return prob.get_prob(sample)
+    def add_probability(self, probability_distribution):
+        probability_distribution.check_integrity()
+        self.probs.append(probability_distribution)
 
-    def add_probability(self, consequent, probability_values):
-        distribution = ProbabilityDistribution(self, consequent, probability_values)
-        self.probs.append(distribution)
+    def get_prob(self, sample, evidence):
+        prob = [p for p in self.probs if (p.evidence == evidence)][0]
+        return prob.get_prob(sample)
+    
+    def add_sample(self, sample, prob_value, evidence):
+        try:
+            prob_distribution = self.get_prob(sample, evidence)
+        except IndexError:
+            prob_distribution = ProbabilityDistribution(self, evidence=evidence)
+            prob_distribution.add_sample(sample, prob_value)
+        self.add_probability(prob_distribution)
 
 class User(Node):
     def __init__(self, index, cb=False, cf=False):
@@ -27,18 +34,15 @@ class User(Node):
         self.is_cb = cb
         self.is_cf = cf
         self.rating = {}
-        self.support = np.arange(1, 10 + 1) # ratings go from 1 to 10. 0 is only used when
-                                            # the user hasn't rated yet  
+        self.support = np.arange(0, 10 + 1) # ratings go from 0 to 10. 0 is only used when
+                                            # the user hasn't rated   
     
-    def set_rating(self, matrix_S, song):
+    def get_rating(self, matrix_S, song):
         """
-        Sets rating for the target song
+        Gets rating for the target song
         """
-        rating = matrix_S.loc[matrix_S['user_id'] == self.index][song.index].values[0]
-        self.rating[song.index] = rating
-    
-    def get_rating(self, song):
-        return self.rating[song.index]
+        return matrix_S.loc[matrix_S['user_id'] == self.index][song.index].values[0]
+
 
 class Item(Node):
     def __init__(self, index, is_target=False):

@@ -175,14 +175,14 @@ def get_column_tags(node, matrix):
     # 2) Return nonzero column names
     return row.columns[row.values.nonzero()[1]].tolist()
 
-def get_edges(nodes, matrix, type):  
+def get_edges(source_nodes, sink_nodes, matrix):  
 
     """
     Parameters:
     -----------
-    nodes: list
+    source_nodes: list
+    sink_nodes: list
     matrix: pd.DataFrame
-    type: str
 
     Returns:
     --------
@@ -192,37 +192,12 @@ def get_edges(nodes, matrix, type):
     # for node in nodes:
     #     row = matrix_S.loc[matrix_S['user_id'] == active_user].squeeze()
     edges = []
-    for n in nodes:
+    for n in sink_nodes:
         ids = get_column_tags(n, matrix)
-    # ids = list(set(chain.from_iterable(get_column_tags(n, matrix) for n in nodes)))
-        if type == 'f-i':
-            edges.extend([Edge(Feature(f), n) for f in ids])
-        elif type == 'i-u':
-            edges.extend([Edge(Item(f), n) for f in ids])
+        source_nodes = [x for x in source_nodes if x.index in ids]
+        edges.extend(Edge(x, n) for x in source_nodes)
     return edges
     
-
-def get_features(item_nodes, matrix_D):
-
-    """
-    Parameters:
-    -----------
-    item_nodes: list 
-    matrix_D: pd.DataFrame
-
-    Returns:
-    --------
-    list
-        A list of all the features that are relevant to the 
-        given list of item_nodes, w/o repetitions
-    """
-    if isinstance(item_nodes, list):
-        feature_ids = list(set(chain.from_iterable(get_column_tags(i, matrix_D) for i in item_nodes)))
-    else:
-        i = item_nodes # just one item 
-        feature_ids = get_column_tags(i, matrix_D)
-
-    return [Feature(f) for f in feature_ids]
 
 def get_users(active_user, matrix_S, k=5):
     """
@@ -270,7 +245,7 @@ def get_u_minus(user_nodes, target_song, matrix_S):
 
     # 2) Return only users in U-
     u_indexes = reduced_S[reduced_S[target_song.index] == 0.0]['user_id'].tolist()
-    return [User(u_) for u_ in u_indexes]
+    return [u_ for u_ in user_nodes if u_.index in u_indexes]
 
 # =======
 def get_user_items(user, matrix_S):   # function for getting the items of each user

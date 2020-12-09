@@ -4,13 +4,16 @@ class ProbabilityDistribution():
     """
     Class for probability distribution objects
     """
-    def __init__(self, variable, consequent=None, probabilities=None):
+    def __init__(self, variable, evidence=None, probabilities=None):
         self.support = variable.support
-        self.consequent = consequent
+        self.evidence = evidence
         self.calculate_min_max_support_values()
         if (probabilities != None):
             self.probabilities = {sample: p for (sample, p) in zip(self.support, probabilities)}
-        self.check_integrity()
+            if not self.check_integrity():
+                raise ValueError("probabilities must add up to 1")
+        else:
+            self.probabilities = {sample: 'undefined' for sample in self.support}
         
     def calculate_min_max_support_values(self):
         try:
