@@ -50,7 +50,7 @@ def perform_inference(graph, matrix_D, matrix_S, item_instantiation=True):
         for item in items:
             users = graph.get_children(item) 
             if users:
-                propagate(users, matrix_S, graph, ev_cb, layer='items-users') #bug here
+                propagate(users, matrix_S, graph, ev_cb, layer='items-users')
 
 
     # *************** Collaborative propagation ***************
@@ -79,7 +79,9 @@ def perform_inference(graph, matrix_D, matrix_S, item_instantiation=True):
 def propagate(source_nodes, matrix_S, graph, evidence, layer):
 
     for node in source_nodes:
-        probs = []
+        if node.probs:
+            return
+        probs=[]
         if layer == 'features-items':
             p = theorem_1(graph, matrix_S, node, 1, evidence) 
             if abs(1.0 - p) < 0.00000001:
@@ -110,7 +112,8 @@ def theorem_1(graph, matrix_S, x, s, evidence):
     int: 
         Probability of x being in state s given the evidence P(x_s|ev)    
     """
-
+    if x.index == 1221314:
+        print('hey')
     parents = graph.get_parents(x)
     prob = 0.0
     for y in parents:
@@ -174,8 +177,7 @@ def w(y, k, x, s, graph, matrix_S):
         return 0.0        
 
     elif (isinstance(y, Item) and isinstance(x, User)):
-        au_row = matrix_S.loc[matrix_S['user_id'] == x.index].squeeze()
-        I_u = float((au_row.drop('user_id') != 0.0).sum())
+        I_u = len(graph.get_parents(x))
         rating = x.get_rating(matrix_S, y)
 
         if k == 1:
