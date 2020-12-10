@@ -14,71 +14,59 @@ def perform_inference(graph, matrix_D, matrix_S, item_instantiation=True):
         ev_cb = graph.get_target_item()
 
     #   1.a.1) set Pr(ij,1jev) = 1 
-    #   (Prob(item = not relevant) is 0.0.  Prob(item = relevant) is 1.0)
         ev_cb.add_probability(ProbabilityDistribution(ev_cb, evidence=ev_cb, probabilities=[0.0, 1.0]))
+
                 
     #   1.a.2) Compute Pr(Fk|ev) using Theorem 2
-        for f in graph.feature_nodes:
-            prob = theorem_2(graph, f, matrix_S, evidence=ev_cb)
-        probability = ProbabilityDistribution(f, evidence=ev_cb, probabilities=[1.0 - prob, prob])
-        f.add_probability(probability)
+        features = graph.feature_nodes
+        propagate_upwards(features, graph, matrix_S, ev_cb)
 
     # 1.b) else:
     elif not item_instantiation:
         ev_cb = graph.get_target_features()
 
     #   1.b.1) for each Fk that is a parent of Ij set Pr(Fk = 1|ev) = 1.// Features Inst.
-        for feature in graph.feature_nodes:
-            if feature in ev_cb:
-                probs = [0.0, 1.0]
+        features = graph.feature_nodes
+        initiate_features_probs(features, graph, ev_cb)
 
-            else: # if F is not a parent of Ij, its probability is a-priori
-                a_priori = a_priori_probability(graph, uniform=True, feature_node=None)
-                if abs(1.0 - a_priori) < 0.00000001:
-                    a_priori = 1.0
-                probs = [1.0 - a_priori, a_priori]
-
-            probability = ProbabilityDistribution(feature, evidence=ev_cb, probabilities=probs)
-            feature.add_probability(probability)
 
     #   1.b.2) Propagate to items using Theorem 1.  
         items = graph.item_nodes
-        propagate(items, matrix_S, graph, ev_cb, layer='features-items')
+        propagate_downwards(items, matrix_S, graph, ev_cb, layer='features-items')
 
 
     #   1.b.3) Propagate to Acb and Ui using Theorem 1.
         for item in items:
             users = graph.get_children(item) 
             if users:
-                propagate(users, matrix_S, graph, ev_cb, layer='items-users')
+                propagate_downwards(users, matrix_S, graph, ev_cb, layer='items-users')
 
 
     # *************** Collaborative propagation ***************
 
-    # For each Uk+ set Pr(Uk = rk,j|evcf) = 1.// Collaborative evidence
+    # 1.c) For each Uk+ set Pr(Uk = rk,j|evcf) = 1.// Collaborative evidence
     ev_cf = graph.get_u_plus(matrix_S)
-
-    for user in ev_cf:
-        target_item = graph.get_target_item()
-        try:
-            rating = int(user.get_rating(target_item))
-        except ValueError: 
-            print('This user does not belong to U+!')
-
-        probability_values = np.zeros(len(user.support)).tolist()
-        probability_values[rating - 1] = 1.0
-        probability = ProbabilityDistribution(user, evidence=ev_cf, probabilities=probability_values)
-        user.add_probability(probability)
+    initiate_u_plus_probs(ev_cf, graph, matrix_S, ev_cf)
 
     # Propagate to Acf node using Theorem 1.// (see Fig. 3c)
+    a_cf = graph.get_a_cf()
+    propagate_downwards([a_cf], matrix_S, graph, ev_cf, layer='users-a_cf')
 
     # Combine content-based and collaborative likelihoods at hybrid node Ah
 
+
     # Select the predicted rating.
 
-def propagate(source_nodes, matrix_S, graph, evidence, layer):
+def propagate_upwards(features, graph, matrix_S, evidence):
+    for f in features:
+        prob = theorem_2(graph, f, matrix_S, evidence=evidence)
+        probability = ProbabilityDistribution(f, evidence=evidence, probabilities=[1.0 - prob, prob])
+        f.add_probability(probability)
 
-    for node in source_nodes:
+
+def propagate_downwards(sink_nodes, matrix_S, graph, evidence, layer):
+
+    for node in sink_nodes:
         if node.probs:
             return
         probs=[]
@@ -93,6 +81,34 @@ def propagate(source_nodes, matrix_S, graph, evidence, layer):
                 probs.append(p)
         probability = ProbabilityDistribution(node, evidence, probabilities=probs)
         node.add_probability(probability) 
+
+def initiate_features_probs(features, graph, evidence):
+    for feature in graph.feature_nodes:
+
+        if feature in evidence:
+            probs = [0.0, 1.0]
+
+        else: # if F is not a parent of Ij, its probability is a-priori
+            a_priori = a_priori_probability(graph, uniform=True, feature_node=None)
+            if abs(1.0 - a_priori) < 0.00000001:
+                a_priori = 1.0
+            probs = [1.0 - a_priori, a_priori]
+
+        probability = ProbabilityDistribution(feature, evidence=evidence, probabilities=probs)
+        feature.add_probability(probability)
+
+def initiate_u_plus_probs(u_plus, graph, matrix_S, evidence):
+    for user in u_plus:
+        target_item = graph.get_target_item()
+        try:
+            rating = int(user.get_rating(matrix_S, target_item))
+        except ValueError: 
+            print('This user does not belong to U+!')
+        probability_values = np.zeros(len(user.support)).tolist()
+        probability_values[rating] = 1.0
+        probability = ProbabilityDistribution(user, evidence=evidence, probabilities=probability_values)
+        user.add_probability(probability)
+
 
 def theorem_1(graph, matrix_S, x, s, evidence):
     """
@@ -112,11 +128,8 @@ def theorem_1(graph, matrix_S, x, s, evidence):
     int: 
         Probability of x being in state s given the evidence P(x_s|ev)    
     """
-    if x.index == 1221314:
-        print('hey')
-    parents = graph.get_parents(x)
     prob = 0.0
-    for y in parents:
+    for y in graph.get_parents(x):
         for k in y.support: 
             prob += w(y, k, x, s, graph, matrix_S) * y.get_prob(k, evidence)
     return prob
@@ -182,7 +195,6 @@ def w(y, k, x, s, graph, matrix_S):
 
         if k == 1:
             if s == rating:
-                print('acierta!! rating: %i' % rating)
                 return 1.0 / I_u
 
             elif (s != rating):
@@ -202,7 +214,7 @@ def w(y, k, x, s, graph, matrix_S):
         x_row = matrix_S.loc[matrix_S['user_id'] == x.index].squeeze().drop('user_id')
         y_row = matrix_S.loc[matrix_S['user_id'] == y.index].squeeze().drop('user_id')
         r_sim = utils.compute_similarity(y_row,x_row) / norm
-        p = probability_star(x,s,y,k,matrix_S)
+        p = probability_star(x, s, y, k, matrix_S)
         if ( (k >= 1) and (s >= 1) ):
             return r_sim * p
 

@@ -31,12 +31,7 @@ class Graph():
     
     def get_u_plus(self, matrix_S):
         target_item = self.get_target_item()
-        active_user_index = self.get_a_cf().index
-        u_minus_indexes = [u_.index for u_ in utils.get_u_minus(self.user_nodes, target_item, matrix_S)]
-        u_plus = [u for u in self.user_nodes if (u.index not in u_minus_indexes and u.index != active_user_index)]
-        for u in u_plus:
-            u.set_rating(matrix_S, self.get_target_item())
-        return u_plus
+        return [e.y for e in self.item_user_edges if e.x == target_item]
 
     def get_target_item(self):        
         return next ((i for i in self.item_nodes if i.is_target), None)
@@ -46,7 +41,7 @@ class Graph():
 
     def get_parents(self, node):
         if (isinstance(node, User) and not node.is_cf):
-            return [e.x for e in self.item_user_edges if e.y.index == node.index]
+            return [e.x for e in self.item_user_edges if e.y.index == node.index] #can i do this w/o index?
         elif (isinstance(node, User) and node.is_cf):
             return [e.x for e in self.u_acf_edges if e.y.index == node.index]
         else:

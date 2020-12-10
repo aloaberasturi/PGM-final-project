@@ -2,6 +2,7 @@
 
 from topology import build_topology
 from pathlib import Path
+
 from inference import perform_inference
 import utils
 import pandas as pd
