@@ -17,8 +17,9 @@ class Node:
         self.probs.append(probability_distribution)
 
     def get_prob(self, sample, evidence):
-        prob = [p for p in self.probs if (p.evidence == evidence)][0]
+        prob = [p for p in self.probs][0]# if p.evidence == evidence][0]
         return prob.get_prob(sample)
+
     
     def add_sample(self, sample, prob_value, evidence):
         try:

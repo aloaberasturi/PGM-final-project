@@ -31,7 +31,9 @@ class Graph():
     
     def get_u_plus(self, matrix_S):
         target_item = self.get_target_item()
-        return [e.y for e in self.item_user_edges if e.x == target_item]
+        users = [u for u in self.user_nodes if (not u.is_cf and not u.is_cb)]
+        return [u_plus for u_plus in utils.get_u_plus(users, target_item, matrix_S)]
+
 
     def get_target_item(self):        
         return next ((i for i in self.item_nodes if i.is_target), None)

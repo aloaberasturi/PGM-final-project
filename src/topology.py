@@ -14,10 +14,10 @@ def build_topology(matrix_S, matrix_D, active_user, target_song):
     # 1.a.1) Instantiate Acb. 
     a_cb = User(active_user, cb = True)
 
-
     # 1.a.2) Instantiate songs reviewed by the active user      
-    row_index = matrix_S.loc[matrix_S['user_id'] == active_user].index[0]
-    item_nodes = [Item(i) for i in matrix_S.columns[1:] if matrix_S.at[row_index, i] != 0]
+    item_nodes = [Item(i) for i in matrix_S.columns[1:]]
+    # row_index = matrix_S.loc[matrix_S['user_id'] == active_user].index[0]
+    # item_nodes = [Item(i) for i in matrix_S.columns[1:] if matrix_S.at[row_index, i] != 0]
 
     # 1.a.3) Instantiate edges from items rated by active user to A_cb (i --> A_cb)
     i_acb_edges = [Edge(i, a_cb) for i in item_nodes]
@@ -37,13 +37,8 @@ def build_topology(matrix_S, matrix_D, active_user, target_song):
     # 2) *********************** DYNAMIC TOPOLOGY ***********************    
     # 2.a) ********************* Content based *************************
     # 2.a.1) Set target item 
-    # check if it is already instantiated. Otherwise, instantiate
-    try:
-        target_song_node = [i for i in item_nodes if i.index == target_song][0]
-        target_song_node.set_as_target()
-    except IndexError:
-        target_song_node = Item(target_song, is_target=True)
-        item_nodes.append(target_song_node)
+    target_song_node = [i for i in item_nodes if i.index == target_song][0]
+    target_song_node.set_as_target()
 
     # 2.a.2) Instantiate edges from all features describing target item to target item. 
     f_target_song_edges = get_edges(feature_nodes, [target_song_node], matrix_D)

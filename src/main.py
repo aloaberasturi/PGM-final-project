@@ -2,22 +2,22 @@
 
 from topology import build_topology
 from pathlib import Path
-
 from inference import perform_inference
 import utils
 import pandas as pd
 
 if __name__ == '__main__':
-
+    """
+    * Matrix_D has songs as rows and features as columns.
+    * Matrix_S has users as rows and songs as columns
+    """
     # A) read songs with features, users and ratings from db
     [music_data, user_data, rating_data] = utils.get_data()
     [songs_dict, users_dict, features_dict] = utils.get_dicts(music_data, user_data, rating_data)
 
     # B) create matrix S and D    
-    # matrix_D has songs as rows and features as columns
-    matrix_D = music_data.drop('name', axis=1).rename(columns={v:k for (k,v) in features_dict.items()})
-    # matrix_S has users as rows and songs as columns
-    matrix_S = utils.compute_scores(user_data, music_data, rating_data)    
+    matrix_D = music_data.drop('name', axis=1).rename(columns={v:k for (k,v) in features_dict.items()}) 
+    matrix_S = utils.compute_scores(user_data, music_data, rating_data) 
     
     # C) choose active user and target song
     [active_user, target_song] = utils.select_user_and_song(matrix_S)  

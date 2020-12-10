@@ -220,9 +220,8 @@ def get_users(active_user, matrix_S, k=5):
         row = matrix_S.loc[row_index]
         if not row.equals(au_row):
             sim = compute_similarity(au_row.drop('user_id'), row.drop('user_id'))
-            if sim != 0:
-                u = int(row['user_id'])
-                similarities[u] = sim
+            u = int(row['user_id'])
+            similarities[u] = sim
     return [User(u) for u in sorted(similarities, key=similarities.get, reverse=True)[:k]]
 
 def get_u_minus(user_nodes, target_song, matrix_S):
@@ -244,9 +243,30 @@ def get_u_minus(user_nodes, target_song, matrix_S):
     reduced_S = matrix_S.loc[matrix_S['user_id'].isin([u.index for u in user_nodes])]
 
     # 2) Return only users in U-
-    u_indexes = reduced_S[reduced_S[target_song.index] == 0.0]['user_id'].tolist()
-    return [u_ for u_ in user_nodes if u_.index in u_indexes]
+    u_indices = reduced_S[reduced_S[target_song.index] == 0.0]['user_id'].tolist()
+    return [u_ for u_ in user_nodes if u_.index in u_indices]
 
+def get_u_plus(user_nodes, target_song, matrix_S):
+    """
+    Returns list of users from user_nodes that have rated target song
+
+    Parameters
+    ----------
+    user_nodes: list
+    target_song: Item
+    matrix_S: pd.DataFrame
+
+    Returns
+    -------
+    list
+        A list with the users in U+
+    """
+ # 1) Select only rows corresponding to user_nodes
+    reduced_S = matrix_S.loc[matrix_S['user_id'].isin([u.index for u in user_nodes])]
+
+    # 2) Return only users in U-
+    u_plus_indices = reduced_S[reduced_S[target_song.index] != 0.0]['user_id'].tolist()
+    return [u_plus for u_plus in user_nodes if u_plus.index in u_plus_indices]
 # =======
 def get_user_items(user, matrix_S):   # function for getting the items of each user
     row = matrix_S.loc[matrix_S['user_id'] == user.index]

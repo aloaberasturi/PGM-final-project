@@ -65,7 +65,6 @@ def propagate_upwards(features, graph, matrix_S, evidence):
 
 
 def propagate_downwards(sink_nodes, matrix_S, graph, evidence, layer):
-
     for node in sink_nodes:
         if node.probs:
             return
@@ -79,6 +78,7 @@ def propagate_downwards(sink_nodes, matrix_S, graph, evidence, layer):
             for s in node.support:
                 p = theorem_1(graph, matrix_S, node, s, evidence)
                 probs.append(p)
+
         probability = ProbabilityDistribution(node, evidence, probabilities=probs)
         node.add_probability(probability) 
 
@@ -112,7 +112,10 @@ def initiate_u_plus_probs(u_plus, graph, matrix_S, evidence):
 
 def theorem_1(graph, matrix_S, x, s, evidence):
     """
-    Function implementing Theorem 1
+    Function implementing Theorem 1. 
+    At the users-a_cf layer, it might be the case that an ancestor of x doesn't 
+    contain collaborative info (y.get_prob(k,evidence) == False).
+    In those situations, we break the loop and go for the next ancestor
     
     Parameters
     ----------
@@ -120,7 +123,7 @@ def theorem_1(graph, matrix_S, x, s, evidence):
     matrix_S: pd.DataFrame
     x: Node
     s: int
-            x's state
+        x's state
     evidence: list
 
     Returns
@@ -130,8 +133,12 @@ def theorem_1(graph, matrix_S, x, s, evidence):
     """
     prob = 0.0
     for y in graph.get_parents(x):
+        p = graph.get_parents(x)
         for k in y.support: 
-            prob += w(y, k, x, s, graph, matrix_S) * y.get_prob(k, evidence)
+            try:
+                prob += w(y, k, x, s, graph, matrix_S) * y.get_prob(k, evidence)
+            except: 
+                break
     return prob
 
 def theorem_2(graph, f, matrix_S, evidence):
@@ -163,6 +170,7 @@ def a_priori_probability(graph, uniform=True, feature_node=None):
 
 
 def w(y, k, x, s, graph, matrix_S):
+
     """
     Function that returns the weight for a given pair of nodes
 
@@ -208,26 +216,24 @@ def w(y, k, x, s, graph, matrix_S):
                 return 0.0
 
     elif (isinstance(y, User) and isinstance(x, User)):
-        # x is a_cf
-        x_parents = graph.get_parents(x)
-        norm = normalize(x_parents, x, matrix_S)
+        # x is a_cf        
+        norm = normalize(x, graph, matrix_S)
         x_row = matrix_S.loc[matrix_S['user_id'] == x.index].squeeze().drop('user_id')
         y_row = matrix_S.loc[matrix_S['user_id'] == y.index].squeeze().drop('user_id')
-        r_sim = utils.compute_similarity(y_row,x_row) / norm
-        p = probability_star(x, s, y, k, matrix_S)
-        if ( (k >= 1) and (s >= 1) ):
+
+        r_sim = utils.compute_similarity(y_row, x_row) / norm
+
+        if ( (k != 0) and (s != 0) ):
+            p = probability_star(x, s, y, k, matrix_S)
             return r_sim * p
 
-        elif ((s==0) and (k==0)):
+        elif (s == 0 and k == 0):
             return r_sim
 
-        elif ((s==0)):
-            return 0
+        else: return 0.0
 
-        elif ((k==0)):
-            return 0
-
-def normalize(parents, a_cf, matrix_S):
+def normalize(a_cf, graph, matrix_S):
+    parents = graph.get_parents(a_cf)
     sum = 0.0
     for u in parents:
         a_row = matrix_S.loc[matrix_S['user_id'] == a_cf.index].squeeze().drop('user_id')
@@ -244,11 +250,22 @@ def m_operator(node, graph):
     return sum
 
 def probability_star(a, s, u, t, matrix_S):
+    #change this
     a_row = matrix_S.loc[matrix_S['user_id'] == a.index].squeeze().drop('user_id')
     u_row = matrix_S.loc[matrix_S['user_id'] == u.index].squeeze().drop('user_id')
-    is_common_score = [True if (i!=0 and j!=0) else False for i, j in zip(a_row.values.tolist(), u_row.values.tolist())]
-    n_u_a = sum(is_common_score)
-    n_u_t = u_row[is_common_score].values.tolist().count(t)
-    numerator = (n_u_a + 1) /  max(a.support) # I THINK that '#r' in eq (7) is this max
-    denominator = (n_u_t + 1)
-    return numerator / denominator
+    is_commonly_scored = [True if (i!=0 and j!=0) else False for i, j in zip(a_row.values.tolist(), u_row.values.tolist())]
+    i_n_as = a_row[is_commonly_scored].values.tolist()
+    i_n_ut = u_row[is_commonly_scored].values.tolist()
+
+    count = 0.0
+    for i,j in zip (i_n_as, i_n_ut):
+        if (i == s and j == t):
+            count +=1
+
+    n_ut_as = count
+    n_ut = i_n_ut.count(t)
+
+    numerator = n_ut_as + (1.0 / max(a.support)) # I THINK that '#r' in eq (7) is the max possible score
+    denominator = n_ut + 1.0
+    prob = numerator / denominator
+    return prob
