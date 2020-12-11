@@ -9,6 +9,8 @@ from heapq import nlargest
 from scipy import stats
 from itertools import chain
 
+#  ********************** Preprocessing functions ********************** 
+
 def get_data(data_folder=Path('../' + "data")):
     """
     Receives path to data. Data is stored in three files, namely:
@@ -23,7 +25,7 @@ def get_data(data_folder=Path('../' + "data")):
     Returns
     -------
     list 
-        List of three pd.dataframe (one per file)
+        List of three pd.DataFrame (one per file)
     """
 
     music_data = data_folder / "music_data.csv"
@@ -44,11 +46,11 @@ def get_dicts(music_data, user_data, rating_data):
     """
     Parameters
     -----------    
-    music_data : pd.dataframe
+    music_data : pd.DataFrame
 
-    user_data: pd.dataframe
+    user_data: pd.DataFrame
 
-    rating_data:pd.dataframe
+    rating_data:pd.DataFrame
     
     Returns
     -------
@@ -69,24 +71,27 @@ def compute_scores(user_data, music_data, rating_data):
     """
     Parameters:
     -----------
-    user_data: pd.dataframe
-    music_data: pd.dataframe
-    rating_data: pd.dataframe
+    user_data: pd.DataFrame
+    music_data: pd.DataFrame
+    rating_data: pd.DataFrame
 
     Returns:
     --------
-    pd.dataframe
+    pd.DataFrame
                 Matrix S
     """
     user_ids = user_data.user_id.values.tolist()
-    song_ids = music_data.song_id.values.tolist()
-    matrix_S = pd.DataFrame(np.zeros((len(user_ids), len(song_ids))), index=user_ids, columns=song_ids)
-
+    columns = ['user_id'] + music_data.song_id.values.tolist()
+    matrix_S = pd.DataFrame(np.zeros((len(user_ids), len(columns))), columns=columns)
+    matrix_S['user_id'] = user_ids
     for _, row in rating_data.iterrows():
         # Set each value in matrix_S to corresponding rating if exists, otherwise stays 0
-        matrix_S[row['song_id']][row['user_id']] = row['rating']
+        i = matrix_S[matrix_S['user_id'] == row['user_id']].index[0]
+        matrix_S.at[i, row['song_id']] = row['rating']
 
     return matrix_S
+
+# ********************** Topology functions ********************** 
 
 def compute_similarity(au_row, u_row):
     """
@@ -102,41 +107,29 @@ def compute_similarity(au_row, u_row):
     --------
     double
     """
-
     is_common_score = [True if (i!=0 and j!=0) else False for i, j in zip(au_row.values.tolist(), u_row.values.tolist())]
     aux_active_user = au_row[is_common_score].values
     aux_user = u_row[is_common_score].values
    
-    try:
-        pc = np.corrcoef(aux_active_user, aux_user)[0][1]
-    except ValueError:
-        return 0    
+    pc = np.corrcoef(aux_active_user, aux_user)[0][1]
 
     if np.isnan(pc):
-        return 0 # The NaN, in this case, is interpreted as no correlation between the two variables. 
-                 # The correlation describes how much one variable changes as the other variable changes. 
-                 # That requires both variables to change.  
+        return 0.0 # The NaN, in this case, is interpreted as no correlation between the two variables. 
+                   # The correlation describes how much one variable changes as the other variable changes. 
+                   # That requires both variables to change.  
 
     i_a = np.count_nonzero(au_row, axis=0)
     i_a_u = sum(is_common_score)    
     sim = abs(pc) * (i_a_u / i_a)
     return sim
 
-def compute_weights(matrix_D, matrix_S, active_user): # in process...
-    # parameters m and n_k used in w(f,i)
-    m = len(matrix_D['song_id'])
-    frequencies = {'n_{}'.format(i): sum(matrix_D['f_%s' % i]) for i in range(len(matrix_D.keys()[1:]))}
-
-    # parameter iucb == |I(Ucb)| used in w(i,u)    
-    row = matrix_S[matrix_S['user_id'] == active_user]
-    iucb = row.drop(['user_id'], axis=1).values.sum(axis=1)
 
 def select_user_and_song(matrix_S):
     """
     Selects a random user as active user and a song that hasn't rated as target song 
     Parameters:
     -----------
-    matrix_S: pd.dataframe
+    matrix_S: pd.DataFrame
 
     Returns:
     --------
@@ -145,78 +138,70 @@ def select_user_and_song(matrix_S):
     """
     while True:
         user_index = random.randint(0, len(matrix_S.axes[0]) - 1)
-        song_index = random.randint(0, len(matrix_S.axes[1]) - 1)
+        song_index = random.randint(0, len(matrix_S.axes[1]) - 2)
         rating = matrix_S.iloc[user_index, song_index]
         if (rating ==0):
             break
-    song = matrix_S.columns.values[song_index]
-    user = matrix_S.index.values[user_index]
+    song = matrix_S.columns.values[1:][song_index]
+    user = matrix_S['user_id'][user_index]
     return (user, song)
 
-def get_item_features(item, matrix_D):
+def get_column_tags(node, matrix):
 
     """
-    Obtains list of features relevant to item i
+    Obtains list of features relevant to item node according to matrix
+    (or list of songs relevant to user node according to matrix)
 
     Parameters
     ----------
-    item: Item
-    matrix_D: pd.dataframe
+    node: Node (Item or User)
+    matrix: pd.DataFrame
 
     Returns
     -------
     list
         A list with the names of the features relevant to item
+        or the songs rated by the user
 
     """
     # 1) Find row and drop unnecessary columns
-    row = matrix_D.loc[matrix_D['song_id'] == item.index].drop(['song_id'], axis=1)
-
+    if isinstance(node, Item):
+        row = matrix.loc[matrix['song_id'] == node.index].drop(['song_id'], axis=1)
+    elif isinstance(node, User):
+        row = matrix.loc[matrix['user_id'] == node.index].drop(['user_id'], axis=1)
     # 2) Return nonzero column names
     return row.columns[row.values.nonzero()[1]].tolist()
 
-def get_edges(item_nodes, matrix_D):  
+def get_edges(source_nodes, sink_nodes, matrix):  
 
     """
     Parameters:
     -----------
-    feature_nodes: list
-    item_nodes: list
-    matrix_D: pd.dataframe
+    source_nodes: list
+    sink_nodes: list
+    matrix: pd.DataFrame
 
     Returns:
     --------
     list
-        A list of the edges from the features in feature_nodes to the
-        corresponding items in item_nodes, w/o repetitions
+        A list of the edges to the nodes according to matrix w/o repetitions
     """       
-    feature_ids = list(set(chain.from_iterable(get_item_features(i, matrix_D) for i in item_nodes)))
-    return [Edge(Feature(f), i) for (f,i) in zip(feature_ids, item_nodes)]
+    # for node in nodes:
+    #     row = matrix_S.loc[matrix_S['user_id'] == active_user].squeeze()
+    edges = []
+    for n in sink_nodes:
+        ids = get_column_tags(n, matrix)
+        source_nodes = [x for x in source_nodes if x.index in ids]
+        edges.extend(Edge(x, n) for x in source_nodes)
+    return edges
     
-
-def get_features(item_nodes, matrix_D):
-
-    """
-    Parameters:
-    -----------
-    item_nodes: list 
-    matrix_D: pd.dataframe
-
-    Returns:
-    --------
-    list
-        A list of all the features that are relevant to the 
-        given list of item_nodes, w/o repetitions
-    """
-    feature_ids = list(set(chain.from_iterable(get_item_features(i, matrix_D) for i in item_nodes)))
-    return [Feature(f) for f in feature_ids]
 
 def get_users(active_user, matrix_S, k=5):
     """
     Parameters
     ----------
     active_user: User
-    matrix_S: pd.dataframe
+    matrix_S: pd.DataFrame
     k: int 
         The number of nearest neighbours to return
 
@@ -226,17 +211,63 @@ def get_users(active_user, matrix_S, k=5):
         The list of the k-nearest neighbours to active user
     """
     similarities = {}
-    au_row = matrix_S.loc[active_user] # au == "active user"
+    au_row = matrix_S.loc[matrix_S['user_id'] == active_user].squeeze() # au == "active user"
 
-    for u, row in matrix_S.iterrows():
+    for row_index in matrix_S.index:
+        row = matrix_S.loc[row_index]
         if not row.equals(au_row):
-            sim = compute_similarity(au_row, row)
+            sim = compute_similarity(au_row.drop('user_id'), row.drop('user_id'))
             if sim != 0:
+                u = int(row['user_id'])
                 similarities[u] = sim
     return [User(u) for u in sorted(similarities, key=similarities.get, reverse=True)[:k]]
-    
+
+def get_u_minus(user_nodes, target_song, matrix_S):
+    """
+    Returns list of users from user_nodes that haven't rated target song
+
+    Parameters
+    ----------
+    user_nodes: list
+    target_song: Item
+    matrix_S: pd.DataFrame
+
+    Returns
+    -------
+    list
+        A list with the users in U-
+    """
+    # 1) Select only rows corresponding to user_nodes
+    reduced_S = matrix_S.loc[matrix_S['user_id'].isin([u.index for u in user_nodes])]
+
+    # 2) Return only users in U-
+    u_indices = reduced_S[reduced_S[target_song.index] == 0.0]['user_id'].tolist()
+    return [u_ for u_ in user_nodes if u_.index in u_indices]
+
+def get_u_plus(user_nodes, target_song, matrix_S):
+    """
+    Returns list of users from user_nodes that have rated target song
+
+    Parameters
+    ----------
+    user_nodes: list
+    target_song: Item
+    matrix_S: pd.DataFrame
+
+    Returns
+    -------
+    list
+        A list with the users in U+
+    """
+ # 1) Select only rows corresponding to user_nodes
+    reduced_S = matrix_S.loc[matrix_S['user_id'].isin([u.index for u in user_nodes])]
+
+    # 2) Return only users in U-
+    u_plus_indices = reduced_S[reduced_S[target_song.index] != 0.0]['user_id'].tolist()
+    return [u_plus for u_plus in user_nodes if u_plus.index in u_plus_indices]
+# =======
 def get_user_items(user, matrix_S):   # function for getting the items of each user
-    row = matrix_S.loc[[user.index]]
+    row = matrix_S.loc[matrix_S['user_id'] == user.index]
     return row.columns[row.values.nonzero()[1]].tolist()
 
 
@@ -249,9 +280,10 @@ def get_u_min(user_nodes, target_song, item_nodes, matrix_S):
         # check if user belongs in U-:
         if target_song not in user_item_ids:
             u_min.append(u)
-            edges = [Edge(i, u) for i in item_nodes if (i.index in user_item_ids)]
-            u_min_edges.append(edges)
-    return [u_min, u_min_edges]
+    return u_min
+# >>>>>>> federico
+
+# ********************** Inference Functions **********************     
 
 def check_rating(rating):
     """
@@ -265,6 +297,7 @@ def check_rating(rating):
     -------
     str
     """
+    
     if (rating < 3):
         opinion = 'the song is awful! :('
     elif (3 <= rating < 5): 
