@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-from utils import get_users, get_edges, get_u_min, get_u_minus
+from utils import get_users, get_edges, get_u_min, get_u_minus, get_u_plus
 from edge import Edge 
 from node import Node, User, Feature, Item
 from graph import Graph
@@ -16,8 +16,6 @@ def build_topology(matrix_S, matrix_D, active_user, target_song):
 
     # 1.a.2) Instantiate songs reviewed by the active user      
     item_nodes = [Item(i) for i in matrix_S.columns[1:]]
-    # row_index = matrix_S.loc[matrix_S['user_id'] == active_user].index[0]
-    # item_nodes = [Item(i) for i in matrix_S.columns[1:] if matrix_S.at[row_index, i] != 0]
 
     # 1.a.3) Instantiate edges from items rated by active user to A_cb (i --> A_cb)
     i_acb_edges = [Edge(i, a_cb) for i in item_nodes]
@@ -48,6 +46,7 @@ def build_topology(matrix_S, matrix_D, active_user, target_song):
     # ======= Alejandra
     # 2.b.1) From the set of k-most similar users, get those that didn't rate the target item, U_.     
     u_minus = get_u_minus([u for u in user_nodes if u.index != active_user], target_song_node, matrix_S)
+    u_plus = get_u_plus([u for u in user_nodes if u.index != active_user], target_song_node, matrix_S)
 
     # 2.b.2) Instantiate edges from items rated by users in U_ to users in U_. 
     i_u_minus_edges = get_edges(item_nodes, u_minus, matrix_S)

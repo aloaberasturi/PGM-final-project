@@ -16,14 +16,14 @@ class Node:
         probability_distribution.check_integrity()
         self.probs.append(probability_distribution)
 
-    def get_prob(self, sample, evidence):
+    def get_prob(self, sample):
         prob = [p for p in self.probs][0]# if p.evidence == evidence][0]
         return prob.get_prob(sample)
 
     
     def add_sample(self, sample, prob_value, evidence):
         try:
-            prob_distribution = self.get_prob(sample, evidence)
+            prob_distribution = self.get_prob(sample)
         except IndexError:
             prob_distribution = ProbabilityDistribution(self, evidence=evidence)
             prob_distribution.add_sample(sample, prob_value)

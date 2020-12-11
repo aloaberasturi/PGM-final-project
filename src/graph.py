@@ -23,15 +23,11 @@ class Graph():
     
     def get_a_cb(self):
         return next((u for u in self.user_nodes if u.is_cb), None)   
-
-    def get_u_minus(self, matrix_S):
-        target_item = self.get_target_item()
-        users = [u for u in self.user_nodes if (not u.is_cf and not u.is_cb)]
-        return [u_ for u_ in utils.get_u_minus(users, target_item, matrix_S)]
     
     def get_u_plus(self, matrix_S):
         target_item = self.get_target_item()
-        users = [u for u in self.user_nodes if (not u.is_cf and not u.is_cb)]
+        active_user = self.get_a_cb()
+        users = [u for u in self.user_nodes if (u.index != active_user)]
         return [u_plus for u_plus in utils.get_u_plus(users, target_item, matrix_S)]
 
 

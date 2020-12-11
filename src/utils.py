@@ -111,15 +111,12 @@ def compute_similarity(au_row, u_row):
     aux_active_user = au_row[is_common_score].values
     aux_user = u_row[is_common_score].values
    
-    try:
-        pc = np.corrcoef(aux_active_user, aux_user)[0][1]
-    except ValueError:
-        return 0    
+    pc = np.corrcoef(aux_active_user, aux_user)[0][1]
 
     if np.isnan(pc):
-        return 0 # The NaN, in this case, is interpreted as no correlation between the two variables. 
-                 # The correlation describes how much one variable changes as the other variable changes. 
-                 # That requires both variables to change.  
+        return 0.0 # The NaN, in this case, is interpreted as no correlation between the two variables. 
+                   # The correlation describes how much one variable changes as the other variable changes. 
+                   # That requires both variables to change.  
 
     i_a = np.count_nonzero(au_row, axis=0)
     i_a_u = sum(is_common_score)    
@@ -220,8 +217,9 @@ def get_users(active_user, matrix_S, k=5):
         row = matrix_S.loc[row_index]
         if not row.equals(au_row):
             sim = compute_similarity(au_row.drop('user_id'), row.drop('user_id'))
-            u = int(row['user_id'])
-            similarities[u] = sim
+            if sim != 0:
+                u = int(row['user_id'])
+                similarities[u] = sim
     return [User(u) for u in sorted(similarities, key=similarities.get, reverse=True)[:k]]
 
 def get_u_minus(user_nodes, target_song, matrix_S):

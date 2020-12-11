@@ -15,7 +15,6 @@ def perform_inference(graph, matrix_D, matrix_S, item_instantiation=True):
 
     #   1.a.1) set Pr(ij,1jev) = 1 
         ev_cb.add_probability(ProbabilityDistribution(ev_cb, evidence=ev_cb, probabilities=[0.0, 1.0]))
-
                 
     #   1.a.2) Compute Pr(Fk|ev) using Theorem 2
         features = graph.feature_nodes
@@ -29,18 +28,15 @@ def perform_inference(graph, matrix_D, matrix_S, item_instantiation=True):
         features = graph.feature_nodes
         initiate_features_probs(features, graph, ev_cb)
 
-
     #   1.b.2) Propagate to items using Theorem 1.  
         items = graph.item_nodes
         propagate_downwards(items, matrix_S, graph, ev_cb, layer='features-items')
 
-
     #   1.b.3) Propagate to Acb and Ui using Theorem 1.
-        for item in items:
-            users = graph.get_children(item) 
-            if users:
+        for i in items:
+            users = graph.get_children(i)
+            if users != []:
                 propagate_downwards(users, matrix_S, graph, ev_cb, layer='items-users')
-
 
     # *************** Collaborative propagation ***************
 
@@ -53,7 +49,6 @@ def perform_inference(graph, matrix_D, matrix_S, item_instantiation=True):
     propagate_downwards([a_cf], matrix_S, graph, ev_cf, layer='users-a_cf')
 
     # Combine content-based and collaborative likelihoods at hybrid node Ah
-
 
     # Select the predicted rating.
 
@@ -103,7 +98,7 @@ def initiate_u_plus_probs(u_plus, graph, matrix_S, evidence):
         try:
             rating = int(user.get_rating(matrix_S, target_item))
         except ValueError: 
-            print('This user does not belong to U+!')
+            print('This user does not belong in U+!')
         probability_values = np.zeros(len(user.support)).tolist()
         probability_values[rating] = 1.0
         probability = ProbabilityDistribution(user, evidence=evidence, probabilities=probability_values)
@@ -113,9 +108,6 @@ def initiate_u_plus_probs(u_plus, graph, matrix_S, evidence):
 def theorem_1(graph, matrix_S, x, s, evidence):
     """
     Function implementing Theorem 1. 
-    At the users-a_cf layer, it might be the case that an ancestor of x doesn't 
-    contain collaborative info (y.get_prob(k,evidence) == False).
-    In those situations, we break the loop and go for the next ancestor
     
     Parameters
     ----------
@@ -133,12 +125,8 @@ def theorem_1(graph, matrix_S, x, s, evidence):
     """
     prob = 0.0
     for y in graph.get_parents(x):
-        p = graph.get_parents(x)
         for k in y.support: 
-            try:
-                prob += w(y, k, x, s, graph, matrix_S) * y.get_prob(k, evidence)
-            except: 
-                break
+            prob += w(y, k, x, s, graph, matrix_S) * y.get_prob(k)
     return prob
 
 def theorem_2(graph, f, matrix_S, evidence):
@@ -215,16 +203,14 @@ def w(y, k, x, s, graph, matrix_S):
             else:
                 return 0.0
 
-    elif (isinstance(y, User) and isinstance(x, User)):
-        # x is a_cf        
+    elif (isinstance(y, User) and isinstance(x, User)):      
         norm = normalize(x, graph, matrix_S)
         x_row = matrix_S.loc[matrix_S['user_id'] == x.index].squeeze().drop('user_id')
-        y_row = matrix_S.loc[matrix_S['user_id'] == y.index].squeeze().drop('user_id')
-
+        y_row = matrix_S.loc[matrix_S['user_id'] == y.index].squeeze().drop('user_id') 
         r_sim = utils.compute_similarity(y_row, x_row) / norm
+        p = probability_star(x, s, y, k, matrix_S)
 
-        if ( (k != 0) and (s != 0) ):
-            p = probability_star(x, s, y, k, matrix_S)
+        if (s != 0 and k != 0):
             return r_sim * p
 
         elif (s == 0 and k == 0):
@@ -232,13 +218,15 @@ def w(y, k, x, s, graph, matrix_S):
 
         else: return 0.0
 
+
+
 def normalize(a_cf, graph, matrix_S):
     parents = graph.get_parents(a_cf)
     sum = 0.0
     for u in parents:
         a_row = matrix_S.loc[matrix_S['user_id'] == a_cf.index].squeeze().drop('user_id')
         u_row = matrix_S.loc[matrix_S['user_id'] == u.index].squeeze().drop('user_id')
-        sum += utils.compute_similarity(a_row, u_row)
+        sum += utils.compute_similarity( u_row, a_row)
     return sum
 
 def m_operator(node, graph):
@@ -247,10 +235,9 @@ def m_operator(node, graph):
         n_k = len(graph.get_children(feature))
         m = len(graph.item_nodes)
         sum += math.log((m / n_k) + 1)
-    return sum
+    return sum 
 
 def probability_star(a, s, u, t, matrix_S):
-    #change this
     a_row = matrix_S.loc[matrix_S['user_id'] == a.index].squeeze().drop('user_id')
     u_row = matrix_S.loc[matrix_S['user_id'] == u.index].squeeze().drop('user_id')
     is_commonly_scored = [True if (i!=0 and j!=0) else False for i, j in zip(a_row.values.tolist(), u_row.values.tolist())]
@@ -265,7 +252,7 @@ def probability_star(a, s, u, t, matrix_S):
     n_ut_as = count
     n_ut = i_n_ut.count(t)
 
-    numerator = n_ut_as + (1.0 / max(a.support)) # I THINK that '#r' in eq (7) is the max possible score
+    numerator = n_ut_as + (1.0 / max(a.support))
     denominator = n_ut + 1.0
     prob = numerator / denominator
     return prob
