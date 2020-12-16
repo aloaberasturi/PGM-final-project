@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-from utils import get_users, get_edges, get_u_min, get_u_minus, get_u_plus
+from topologyUtils import get_users, get_edges, get_u_min, get_u_minus, get_u_plus
 from edge import Edge 
 from node import Node, User, Feature, Item
 from graph import Graph
@@ -7,6 +7,18 @@ import numpy as np
 import gc
 
 def build_topology(matrix_S, matrix_D, active_user, target_song):
+    """
+    Function that builds the topology of the network.
+    Parameters
+    ----------
+
+    matrix_S: pd.DataFrame
+    matrix_D: pd.DataFrame
+    active_user: int
+                Active user ID
+    target_song: int
+                Target song ID
+    """
 
     # 1) *********************** STATIC TOPOLOGY ***********************
     # 1.a) ********************* Content based *************************        
@@ -43,23 +55,19 @@ def build_topology(matrix_S, matrix_D, active_user, target_song):
 
     # 2.b) ********************* Collaborative component ************************* 
 
-    # ======= Alejandra
     # 2.b.1) From the set of k-most similar users, get those that didn't rate the target item, U_.     
     u_minus = get_u_minus([u for u in user_nodes if u.index != active_user], target_song_node, matrix_S)
-    u_plus = get_u_plus([u for u in user_nodes if u.index != active_user], target_song_node, matrix_S)
+    u_plus = get_u_plus(user_nodes, target_song_node, matrix_S)
+
+    # target_item = self.get_target_item()
+    # active_user = self.get_a_cb()
+    # users = [u for u in self.user_nodes if (u.index != active_user)]
+    # return [u_plus for u_plus in topologyUtils.get_u_plus(users, target_item, matrix_S)]    
 
     # 2.b.2) Instantiate edges from items rated by users in U_ to users in U_. 
     i_u_minus_edges = get_edges(item_nodes, u_minus, matrix_S)
 
-    
-    # ======= Federico
-    # # 2.b.1) From the set of k-most similar users, get those that didn't rate the target item, U_.
-    # u_min = get_u_min(user_nodes, target_song, item_nodes, matrix_S)
-
-    # # 2.b.2) Instantiate edges from items rated by users in U_ to users in U_.
-    # u_min_edges = get_edges(u_min, matrix_S, 'i-u')
-
-    # Return graph
+    # 3) Return graph
     nodes = [obj for obj in gc.get_objects() if isinstance(obj, Node)]
 
     edges = [obj for obj in gc.get_objects() if isinstance(obj, Edge)]

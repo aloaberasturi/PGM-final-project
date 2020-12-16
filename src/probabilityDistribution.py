@@ -20,10 +20,7 @@ class ProbabilityDistribution():
             self.max_support_value = max(self.support)
             self.min_support_value = min(self.support)
         except ValueError:
-            print("The support of the distribution is empty")
-    
-    def add_sample(self, sample, prob):
-        self.probabilities[sample] = prob    
+            print("The support of the distribution is empty") 
 
     def get_support(self):
         return self.support

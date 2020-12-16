@@ -259,12 +259,13 @@ def get_u_plus(user_nodes, target_song, matrix_S):
     list
         A list with the users in U+
     """
- # 1) Select only rows corresponding to user_nodes
+    # 1) Select only rows corresponding to user_nodes
     reduced_S = matrix_S.loc[matrix_S['user_id'].isin([u.index for u in user_nodes])]
 
     # 2) Return only users in U-
     u_plus_indices = reduced_S[reduced_S[target_song.index] != 0.0]['user_id'].tolist()
     return [u_plus for u_plus in user_nodes if u_plus.index in u_plus_indices]
+
 # =======
 def get_user_items(user, matrix_S):   # function for getting the items of each user
     row = matrix_S.loc[matrix_S['user_id'] == user.index]

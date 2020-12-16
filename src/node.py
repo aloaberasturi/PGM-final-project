@@ -10,24 +10,14 @@ class Node:
 
     def __init__(self, index):
         self.index = index
-        self.probs = []
+        self.prob = None
 
     def add_probability(self, probability_distribution):
-        probability_distribution.check_integrity()
-        self.probs.append(probability_distribution)
+        self.prob = probability_distribution
 
     def get_prob(self, sample):
-        prob = [p for p in self.probs][0]# if p.evidence == evidence][0]
-        return prob.get_prob(sample)
+        return self.prob.get_prob(sample)
 
-    
-    def add_sample(self, sample, prob_value, evidence):
-        try:
-            prob_distribution = self.get_prob(sample)
-        except IndexError:
-            prob_distribution = ProbabilityDistribution(self, evidence=evidence)
-            prob_distribution.add_sample(sample, prob_value)
-        self.add_probability(prob_distribution)
 
 class User(Node):
     def __init__(self, index, cb=False, cf=False):
@@ -40,19 +30,15 @@ class User(Node):
     
     def get_rating(self, matrix_S, song):
         """
-        Gets rating for the target song
+        Gets rating for a song given the scoring matrix
         """
         return matrix_S.loc[matrix_S['user_id'] == self.index][song.index].values[0]
-
 
 class Item(Node):
     def __init__(self, index, is_target=False):
         super().__init__(index)
         self.support = np.arange(0, 1 + 1)
         self.is_target = is_target
-
-    def set_features(self, features):
-        self.features = features
     
     def set_as_target(self, is_target=True):
         self.is_target = is_target

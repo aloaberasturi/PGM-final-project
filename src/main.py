@@ -3,7 +3,7 @@
 from topology import build_topology
 from pathlib import Path
 from inference import perform_inference
-import utils
+import topologyUtils as utils
 import pandas as pd
 
 if __name__ == '__main__':
@@ -26,7 +26,7 @@ if __name__ == '__main__':
     graph = build_topology(matrix_S, matrix_D, active_user, target_song)
 
     # E) compute ratings    
-    rating = perform_inference(graph, matrix_D, matrix_S, item_instantiation=False)
+    rating = perform_inference(graph, matrix_D, matrix_S)
 
     # F) classify rating
     # user_opinion = utils.check_rating(rating)
