@@ -138,9 +138,9 @@ def select_user_and_song(matrix_S):
     """
     while True:
         user_index = random.randint(0, len(matrix_S.axes[0]) - 1)
-        song_index = random.randint(0, len(matrix_S.axes[1]) - 2)
-        rating = matrix_S.iloc[user_index, song_index]
-        if (rating ==0):
+        song_index = random.randint(0, len(matrix_S.axes[1]) - 1)
+        rating = matrix_S.iloc[user_index, song_index + 1]
+        if (rating == 0):
             break
     song = matrix_S.columns.values[1:][song_index]
     user = matrix_S['user_id'][user_index]

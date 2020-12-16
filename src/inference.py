@@ -48,10 +48,12 @@ def perform_inference(graph, matrix_D, matrix_S):
     utils.initiate_u_plus_probs(ev_cf, graph, matrix_S, ev_cf)
 
     # Propagate to Acf node using Theorem 1.// (see Fig. 3c)
-    a_cf = graph.get_a_cf()
-    utils.propagate_downwards([a_cf], matrix_S, graph, ev_cf, layer='users-a_cf')
+    utils.propagate_downwards([graph.get_a_cf()], matrix_S, graph, ev_cf, layer='users-a_cf')
 
     # Combine content-based and collaborative likelihoods at hybrid node Ah
+    a_cf = graph.get_a_cf()
+    a_cb = graph.get_a_cb()
+    
 
     # Select the predicted rating.
 
