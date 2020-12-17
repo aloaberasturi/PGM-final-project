@@ -237,3 +237,58 @@ def probability_star(a, s, u, t, matrix_S):
     denominator = n_ut + 1.0
     prob = numerator / denominator
     return prob
+
+def set_max_rating(node):
+    """
+    Selects the rating with the highest probability for a_cf and a_cb and sets it
+
+    Parameters
+    ----------
+    node: node
+    
+    """
+    p_distribution = node.prob.get_probs()[1:]
+    max_rating = p_distribution.index(max(p_distribution))+1
+    node.rating = max_rating
+
+def combine(graph):
+    """
+    Merges the probability distributions contained in a_cf and a_cb.
+    It chooses the rating with higher probability out of cf and cb as the most probable rating.
+
+
+    Parameters
+    ----------
+    graph: Graph
+
+    Returns 
+    -------
+    Updated hybrid node
+    """
+
+    a_cf = graph.get_a_cf()
+    a_cb = graph.get_a_cb()
+    a_h = graph.get_a_h()
+
+    alpha = a_cf.prob.get_prob(0)
+    set_max_rating(a_cf)
+    set_max_rating(a_cb)
+
+    hybrid_probabilities = []
+    for sample in a_h.support[1:]:
+        if sample == a_cf.rating and sample == a_cb.rating:
+            p = 1
+        elif sample == a_cf.rating:
+            p = 1 - alpha
+        elif sample == a_cb.rating:
+            p = alpha
+        else:
+            p = 0
+        hybrid_probabilities.append(p)
+
+    a_h_rating = hybrid_probabilities.index(max(hybrid_probabilities)) + 1 # add one to the index as rating != 0
+    confidence = round(hybrid_probabilities[a_h_rating - 1] * 100, 2)  
+    a_h.add_rating(a_h_rating, confidence)  # add rating to hybrid node, includes the confidence
+
+    return a_h
+

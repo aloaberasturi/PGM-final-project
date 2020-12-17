@@ -16,15 +16,15 @@ class Node:
         self.prob = probability_distribution
 
     def get_prob(self, sample):
-        a = self.prob.get_prob(sample)
-        return a
+        return self.prob.get_prob(sample)
 
 
 class User(Node):
-    def __init__(self, index, cb=False, cf=False):
+    def __init__(self, index, cb=False, cf=False, h = False):
         super().__init__(index)
         self.is_cb = cb
         self.is_cf = cf
+        self.is_h = h
         self.rating = {}
         self.support = np.arange(0, 10 + 1) # ratings go from 0 to 10. 0 is only used when
                                             # the user hasn't rated   
@@ -34,6 +34,9 @@ class User(Node):
         Gets rating for a song given the scoring matrix
         """
         return matrix_S.loc[matrix_S['user_id'] == self.index][song.index].values[0]
+    
+    def add_rating(self, k, v):
+        self.rating[k] = v
 
 class Item(Node):
     def __init__(self, index, is_target=False):

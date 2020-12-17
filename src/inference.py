@@ -18,7 +18,7 @@ def perform_inference(graph, matrix_D, matrix_S):
 
     Returns:
     --------
-    int: Predicted rating of the target song by the active user
+    (int, int): (Predicted rating of the target song by the active user, confidence of the result)
 
     """
 
@@ -49,9 +49,11 @@ def perform_inference(graph, matrix_D, matrix_S):
     utils.propagate_downwards([graph.get_a_cf()], matrix_S, graph, ev_cf, layer='users-a_cf')
 
     # Combine content-based and collaborative likelihoods at hybrid node Ah
-    a_cf = graph.get_a_cf()
-    a_cb = graph.get_a_cb()
+    a_h = utils.combine(graph)
 
-    # Select the predicted rating.
+    return a_h
+
+    
+
 
 

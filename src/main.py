@@ -26,12 +26,15 @@ if __name__ == '__main__':
     graph = build_topology(matrix_S, matrix_D, active_user, target_song)
 
     # E) compute ratings    
-    rating = perform_inference(graph, matrix_D, matrix_S)
-    
-    # F) classify rating
-    # user_opinion = utils.check_rating(rating)
+    a_h = perform_inference(graph, matrix_D, matrix_S)
 
-    # print("User %s would rate song %s with a %i" % (active_user, target_song, rating))
-    # print("The user might think that %s" % user_opinion)
+    # F) classify rating and print result
+    rating = list(a_h.rating.keys())[0]
+    confidence = list(a_h.rating.values())[0]
+    user_opinion = utils.check_rating(rating)
+    active_user = str.capitalize(users_dict[active_user])
+    target_song = str.title(songs_dict[target_song])
 
+    print("User %s would rate song %s with a %i, with likelihood of %d percent" % (active_user, target_song, rating, confidence))
+    print("%s might think that %s" % (active_user, user_opinion) )
 

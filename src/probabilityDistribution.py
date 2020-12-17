@@ -46,6 +46,7 @@ class ProbabilityDistribution():
         """
         Overrides __str__() method
         """
+
         self.probabilities = {int(k):v for k,v in self.probabilities.items()}
         string = "Probability distribution: " + json.dumps(self.probabilities)
         return string

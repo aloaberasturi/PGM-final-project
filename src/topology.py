@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-from topologyUtils import get_users, get_edges, get_u_min, get_u_minus, get_u_plus
+from topologyUtils import get_users, get_edges, get_u_minus, get_u_plus
 from edge import Edge 
 from node import Node, User, Feature, Item
 from graph import Graph
@@ -43,6 +43,12 @@ def build_topology(matrix_S, matrix_D, active_user, target_song):
  
     # 1.b.2) Instantiate edges from k-most similar users to Acf.
     u_acf_edges = [Edge(u, a_cf) for u in user_nodes]
+
+    # 1.c) ********************** Hybrid Component **************************+
+    # 1.c.1) Instantiate Ah, create edges with Acf and Acb
+    a_h = User(active_user, h = True)
+    acf_ah_edge = Edge(a_cf,a_h)
+    acb_ah_edge = Edge(a_cb,a_h)
 
     # 2) *********************** DYNAMIC TOPOLOGY ***********************    
     # 2.a) ********************* Content based *************************

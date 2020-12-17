@@ -36,6 +36,9 @@ class Graph():
     
     def get_a_cb(self):
         return next((u for u in self.user_nodes if u.is_cb), None)   
+
+    def get_a_h(self):
+        return next((u for u in self.user_nodes if u.is_h), None)
     
     def get_target_item(self):        
         return next ((i for i in self.item_nodes if i.is_target), None)
@@ -50,8 +53,8 @@ class Graph():
             return [e.x for e in self.u_acf_edges if e.y == node]
         else:
             return [e.x for e in self.feature_item_edges if e.y == node]
-
-    def get_children(self, node): 
+            
+    def get_children(self, node):
         if (isinstance(node, User) and not node.is_cf):
             return [e.y for e in self.item_user_edges if e.x == node]
         elif (isinstance(node, User) and node.is_cf):
