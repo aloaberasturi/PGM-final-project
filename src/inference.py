@@ -36,10 +36,8 @@ def perform_inference(graph, matrix_D, matrix_S):
     utils.propagate_downwards(items, matrix_S, graph, ev_cb, layer='features-items')
 
     # 1.a.4) Propagate to Acb and Ui using Theorem 1.
-    for i in items:
-        users = graph.get_children(i)
-        if users != []:
-            utils.propagate_downwards(users, matrix_S, graph, ev_cb, layer='items-users')
+    users = list(set([u for i in items for u in graph.get_children(i)]))
+    utils.propagate_downwards(users, matrix_S, graph, ev_cb, layer='items-users')
 
     # *************** Collaborative propagation ***************
 
@@ -53,7 +51,6 @@ def perform_inference(graph, matrix_D, matrix_S):
     # Combine content-based and collaborative likelihoods at hybrid node Ah
     a_cf = graph.get_a_cf()
     a_cb = graph.get_a_cb()
-    
 
     # Select the predicted rating.
 

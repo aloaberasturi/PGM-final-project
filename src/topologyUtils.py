@@ -138,7 +138,7 @@ def select_user_and_song(matrix_S):
     """
     while True:
         user_index = random.randint(0, len(matrix_S.axes[0]) - 1)
-        song_index = random.randint(0, len(matrix_S.axes[1]) - 1)
+        song_index = random.randint(0, len(matrix_S.axes[1]) - 2)
         rating = matrix_S.iloc[user_index, song_index + 1]
         if (rating == 0):
             break
@@ -184,7 +184,7 @@ def get_edges(source_nodes, sink_nodes, matrix):
     Returns:
     --------
     list
-        A list of the edges to the nodes according to matrix w/o repetitions
+        A list of edges between nodes according to matrix w/o repetitions
     """       
     # for node in nodes:
     #     row = matrix_S.loc[matrix_S['user_id'] == active_user].squeeze()

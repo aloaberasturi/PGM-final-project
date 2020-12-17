@@ -27,7 +27,7 @@ if __name__ == '__main__':
 
     # E) compute ratings    
     rating = perform_inference(graph, matrix_D, matrix_S)
-
+    
     # F) classify rating
     # user_opinion = utils.check_rating(rating)
 

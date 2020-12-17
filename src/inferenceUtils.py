@@ -32,7 +32,7 @@ def propagate_downwards(sink_nodes, matrix_S, graph, evidence, layer):
             if abs(1.0 - p) < 0.00000001:
                 p = 1.0
             probs.extend([1.0 - p, p])
-        else: 
+        else: # layer items-users or users-a_cf
             for s in node.support:
                 p = theorem_1(graph, matrix_S, node, s, evidence)
                 probs.append(p)

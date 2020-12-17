@@ -57,12 +57,6 @@ def build_topology(matrix_S, matrix_D, active_user, target_song):
 
     # 2.b.1) From the set of k-most similar users, get those that didn't rate the target item, U_.     
     u_minus = get_u_minus([u for u in user_nodes if u.index != active_user], target_song_node, matrix_S)
-    u_plus = get_u_plus(user_nodes, target_song_node, matrix_S)
-
-    # target_item = self.get_target_item()
-    # active_user = self.get_a_cb()
-    # users = [u for u in self.user_nodes if (u.index != active_user)]
-    # return [u_plus for u_plus in topologyUtils.get_u_plus(users, target_item, matrix_S)]    
 
     # 2.b.2) Instantiate edges from items rated by users in U_ to users in U_. 
     i_u_minus_edges = get_edges(item_nodes, u_minus, matrix_S)

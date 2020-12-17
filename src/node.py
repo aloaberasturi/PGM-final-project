@@ -16,7 +16,8 @@ class Node:
         self.prob = probability_distribution
 
     def get_prob(self, sample):
-        return self.prob.get_prob(sample)
+        a = self.prob.get_prob(sample)
+        return a
 
 
 class User(Node):

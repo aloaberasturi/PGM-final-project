@@ -45,13 +45,13 @@ class Graph():
 
     def get_parents(self, node):
         if (isinstance(node, User) and not node.is_cf):
-            return [e.x for e in self.item_user_edges if e.y == node] #can i do this w/o index?
+            return [e.x for e in self.item_user_edges if e.y == node] 
         elif (isinstance(node, User) and node.is_cf):
             return [e.x for e in self.u_acf_edges if e.y == node]
         else:
             return [e.x for e in self.feature_item_edges if e.y == node]
 
-    def get_children(self, node):        # make this more elegant, less verbose
+    def get_children(self, node): 
         if (isinstance(node, User) and not node.is_cf):
             return [e.y for e in self.item_user_edges if e.x == node]
         elif (isinstance(node, User) and node.is_cf):
