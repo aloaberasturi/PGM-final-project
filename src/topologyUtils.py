@@ -28,15 +28,15 @@ def get_data(data_folder=Path('../' + "data")):
         List of three pd.DataFrame (one per file)
     """
 
-    music_data = data_folder / "music_data.csv"
+    music_data = data_folder / "music_data2.csv"
     music_data = pd.read_csv(music_data)
     music_data.dropna(inplace = True) 
     music_data['name'] = music_data['name'].str.lower()
-    user_data = data_folder / "user_data.csv"
+    user_data = data_folder / "user_data2.csv"
     user_data = pd.read_csv(user_data)
     user_data['name'] = user_data['name'].str.lower()
     user_data.dropna(inplace = True) 
-    rating_data = data_folder / "ratings.csv"    
+    rating_data = data_folder / "ratings2.csv"
     rating_data = pd.read_csv(rating_data)
     rating_data.dropna(inplace = True) 
 
@@ -59,8 +59,8 @@ def get_dicts(music_data, user_data, rating_data):
         names to indexes and viceversa
     """
 
-    songs_dict = pd.Series(music_data.name.values, index = music_data.song_id).to_dict() 
-    users_dict = pd.Series(user_data.name.values , index = user_data.user_id).to_dict()
+    songs_dict = pd.Series(music_data.song_id.values, index = music_data.name).to_dict() 
+    users_dict = pd.Series(user_data.user_id.values, index = user_data.name).to_dict()
     features = list(music_data.keys()[2:])
     keys = ["f_%i" % i for i in range(len(features))]
     features_dict = {k:v for (k, v) in zip(keys, features)}
@@ -110,7 +110,6 @@ def compute_similarity(au_row, u_row):
     is_common_score = [True if (i!=0 and j!=0) else False for i, j in zip(au_row.values.tolist(), u_row.values.tolist())]
     aux_active_user = au_row[is_common_score].values
     aux_user = u_row[is_common_score].values
-   
     pc = np.corrcoef(aux_active_user, aux_user)[0][1]
 
     if np.isnan(pc):
@@ -184,7 +183,7 @@ def get_edges(source_nodes, sink_nodes, matrix):
     Returns:
     --------
     list
-        A list of edges between nodes according to matrix w/o repetitions
+        A list of edges between nodes according to matrix w/o repetition
     """       
     # for node in nodes:
     #     row = matrix_S.loc[matrix_S['user_id'] == active_user].squeeze()
@@ -266,9 +265,27 @@ def get_u_plus(user_nodes, target_song, matrix_S):
     u_plus_indices = reduced_S[reduced_S[target_song.index] != 0.0]['user_id'].tolist()
     return [u_plus for u_plus in user_nodes if u_plus.index in u_plus_indices]
 
+# =======
+def get_user_items(user, matrix_S):   # function for getting the items of each user
+    row = matrix_S.loc[matrix_S['user_id'] == user.index]
+    return row.columns[row.values.nonzero()[1]].tolist()
+
+
+def get_u_min(user_nodes, target_song, item_nodes, matrix_S):
+    u_min= []
+    u_min_edges = []
+    for u in user_nodes:
+        user_item_ids = get_user_items(u, matrix_S)
+
+        # check if user belongs in U-:
+        if target_song not in user_item_ids:
+            u_min.append(u)
+    return u_min
+# >>>>>>> federico
+
 # ********************** Inference Functions **********************     
 
-def check_rating(rating):
+def check_rating(a_h_rating):
     """
     A function to generate user-friendly ratings to songs
     
@@ -280,7 +297,8 @@ def check_rating(rating):
     -------
     str
     """
-    
+    rating = a_h_rating[0]
+
     if (rating < 3):
         opinion = 'the song is awful! :('
     elif (3 <= rating < 5): 
@@ -293,5 +311,6 @@ def check_rating(rating):
         opinion = 'the song is brilliant :D '
     elif (rating == 10):
         opinion = 'the song is memorable <3'
-    
+
     return opinion
+
