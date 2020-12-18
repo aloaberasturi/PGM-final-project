@@ -28,15 +28,15 @@ def get_data(data_folder=Path('../' + "data")):
         List of three pd.DataFrame (one per file)
     """
 
-    music_data = data_folder / "music_data.csv"
+    music_data = data_folder / "music_data2.csv"
     music_data = pd.read_csv(music_data)
     music_data.dropna(inplace = True) 
     music_data['name'] = music_data['name'].str.lower()
-    user_data = data_folder / "user_data.csv"
+    user_data = data_folder / "user_data2.csv"
     user_data = pd.read_csv(user_data)
     user_data['name'] = user_data['name'].str.lower()
     user_data.dropna(inplace = True) 
-    rating_data = data_folder / "ratings.csv"    
+    rating_data = data_folder / "ratings2.csv"
     rating_data = pd.read_csv(rating_data)
     rating_data.dropna(inplace = True) 
 
@@ -110,7 +110,6 @@ def compute_similarity(au_row, u_row):
     is_common_score = [True if (i!=0 and j!=0) else False for i, j in zip(au_row.values.tolist(), u_row.values.tolist())]
     aux_active_user = au_row[is_common_score].values
     aux_user = u_row[is_common_score].values
-   
     pc = np.corrcoef(aux_active_user, aux_user)[0][1]
 
     if np.isnan(pc):
@@ -266,7 +265,43 @@ def get_u_plus(user_nodes, target_song, matrix_S):
     u_plus_indices = reduced_S[reduced_S[target_song.index] != 0.0]['user_id'].tolist()
     return [u_plus for u_plus in user_nodes if u_plus.index in u_plus_indices]
 
-# ********************** Inference Functions **********************     
+def print_results(a_h, matrix_S, songs_dict, users_dict, target_song):
+    """
+    A function to print the final results by the system
+
+    Parameters
+    ----------
+    a_h: node
+
+    matrix_S: pd.DataFrame
+
+    songs_dict: dict
+
+    users_dict: dict
+
+    target_song: int
+    """
+    rating = list(a_h.rating.keys())[0]
+    confidence = list(a_h.rating.values())[0]
+    user_opinion = check_rating(rating)
+    active_user_name = str.capitalize(users_dict[a_h.index])
+    target_song_name = str.title(songs_dict[target_song])
+
+
+    # get all the songs the active user rated
+    songs_active_user_rated = matrix_S.loc[matrix_S['user_id'] == a_h.index]
+    # get the songs the active user rated over 5
+    aux_ids = songs_active_user_rated[songs_active_user_rated.columns[songs_active_user_rated.max() > 5]].columns.tolist()[1:]
+    songs_active_user_likes = [songs_dict[s_id] for s_id in aux_ids]
+
+    # show which songs the active user liked
+    print("%s likes these songs:" % active_user_name)
+    for s in songs_active_user_likes:
+        print('* ' + s)
+    # show the results of the recommender system
+    # print("%s would rate song %s with a %i, with likelihood of %d percent." % (active_user_name, target_song_name, rating, confidence))
+    print("%s might think about %s that %s" % (active_user_name,target_song_name,user_opinion))
+
 
 def check_rating(rating):
     """
@@ -282,16 +317,16 @@ def check_rating(rating):
     """
     
     if (rating < 3):
-        opinion = 'the song is awful! :('
+        opinion = "it's awful! :("
     elif (3 <= rating < 5): 
-        opinion = 'the song is pretty bad :/'
+        opinion = "it's pretty bad :/"
     elif (5 <= rating < 7): 
-        opinion = 'the song is fine :)'
+        opinion = "it's fine :)"
     elif (7 <= rating < 9): 
-        opinion = "the song is very interesting ^^"
+        opinion = "it's quite interesting ^^"
     elif (9 <= rating < 10):
-        opinion = 'the song is brilliant :D '
+        opinion = "it's brilliant :D"
     elif (rating == 10):
-        opinion = 'the song is memorable <3'
+        opinion = "it's memorable <3"
     
     return opinion

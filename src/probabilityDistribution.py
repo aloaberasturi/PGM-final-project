@@ -8,12 +8,9 @@ class ProbabilityDistribution():
         self.support = variable.support
         self.evidence = evidence
         self.calculate_min_max_support_values()
-        if (probabilities != None):
-            self.probabilities = {sample: p for (sample, p) in zip(self.support, probabilities)}
-            if not self.check_integrity():
-                raise ValueError("probabilities must add up to 1")
-        else:
-            self.probabilities = {sample: 'undefined' for sample in self.support}
+        self.probabilities = {sample: p for (sample, p) in zip(self.support, probabilities)}
+        if not self.check_integrity():
+            raise ValueError("probabilities must add up to 1")
         
     def calculate_min_max_support_values(self):
         try:

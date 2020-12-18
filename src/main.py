@@ -18,7 +18,7 @@ if __name__ == '__main__':
     # B) create matrix S and D    
     matrix_D = music_data.drop('name', axis=1).rename(columns={v:k for (k,v) in features_dict.items()}) 
     matrix_S = utils.compute_scores(user_data, music_data, rating_data) 
-    
+
     # C) choose active user and target song
     [active_user, target_song] = utils.select_user_and_song(matrix_S)  
 
@@ -29,12 +29,5 @@ if __name__ == '__main__':
     a_h = perform_inference(graph, matrix_D, matrix_S)
 
     # F) classify rating and print result
-    rating = list(a_h.rating.keys())[0]
-    confidence = list(a_h.rating.values())[0]
-    user_opinion = utils.check_rating(rating)
-    active_user = str.capitalize(users_dict[active_user])
-    target_song = str.title(songs_dict[target_song])
-
-    print("User %s would rate song %s with a %i, with likelihood of %d percent" % (active_user, target_song, rating, confidence))
-    print("%s might think that %s" % (active_user, user_opinion) )
-
+    utils.print_results(a_h, matrix_S, songs_dict, users_dict, target_song)
+    
