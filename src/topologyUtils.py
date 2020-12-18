@@ -28,15 +28,15 @@ def get_data(data_folder=Path('../' + "data")):
         List of three pd.DataFrame (one per file)
     """
 
-    music_data = data_folder / "music_data.csv"
+    music_data = data_folder / "music_data2.csv"
     music_data = pd.read_csv(music_data)
     music_data.dropna(inplace = True) 
     music_data['name'] = music_data['name'].str.lower()
-    user_data = data_folder / "user_data.csv"
+    user_data = data_folder / "user_data2.csv"
     user_data = pd.read_csv(user_data)
     user_data['name'] = user_data['name'].str.lower()
     user_data.dropna(inplace = True) 
-    rating_data = data_folder / "ratings.csv"    
+    rating_data = data_folder / "ratings2.csv"
     rating_data = pd.read_csv(rating_data)
     rating_data.dropna(inplace = True) 
 
@@ -110,7 +110,6 @@ def compute_similarity(au_row, u_row):
     is_common_score = [True if (i!=0 and j!=0) else False for i, j in zip(au_row.values.tolist(), u_row.values.tolist())]
     aux_active_user = au_row[is_common_score].values
     aux_user = u_row[is_common_score].values
-   
     pc = np.corrcoef(aux_active_user, aux_user)[0][1]
 
     if np.isnan(pc):
