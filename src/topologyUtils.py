@@ -183,7 +183,7 @@ def get_edges(source_nodes, sink_nodes, matrix):
     Returns:
     --------
     list
-        A list of edges between nodes according to matrix w/o repetitions
+        A list of edges between nodes according to matrix w/o repetition
     """       
     # for node in nodes:
     #     row = matrix_S.loc[matrix_S['user_id'] == active_user].squeeze()
@@ -302,7 +302,6 @@ def print_results(a_h, matrix_S, songs_dict, users_dict, target_song):
     # print("%s would rate song %s with a %i, with likelihood of %d percent." % (active_user_name, target_song_name, rating, confidence))
     print("%s might think about %s that %s" % (active_user_name,target_song_name,user_opinion))
 
-
 def check_rating(rating):
     """
     A function to generate user-friendly ratings to songs
@@ -315,7 +314,7 @@ def check_rating(rating):
     -------
     str
     """
-    
+
     if (rating < 3):
         opinion = "it's awful! :("
     elif (3 <= rating < 5): 
@@ -328,5 +327,6 @@ def check_rating(rating):
         opinion = "it's brilliant :D"
     elif (rating == 10):
         opinion = "it's memorable <3"
-    
+
     return opinion
+
